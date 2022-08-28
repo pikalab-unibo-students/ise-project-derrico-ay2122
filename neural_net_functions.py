@@ -1,16 +1,16 @@
 import tensorflow as tf
-import tensorflow_docs as tfdocs
-import tensorflow_docs.modeling
-import tensorflow_docs.plots
-from tensorflow.python.client import device_lib
+#import tensorflow_docs as tfdocs
+#import tensorflow_docs.modeling
+#import tensorflow_docs.plots
+#from tensorflow.python.client import device_lib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-def fit_model(df, model):
+def create_datasets(df):
+
+    df[df['target'] < 0] = len(df['target'].unique()) - 1
     columns = [c for c in df.columns if c != 'target']
     X, y = df.loc[:, columns], df.loc[:, 'target']
-
-    print(model.summary())
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=42)
 
@@ -19,8 +19,16 @@ def fit_model(df, model):
     X_train = scaler.transform(X_train)
     X_test = scaler.transform(X_test)
 
+    return X_train, X_test, y_train, y_test
+
+def fit_model(df, model):
+
+    X_train, X_test, y_train, y_test = create_datasets(df)
+
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
+
+    print("Accuracy: ", len(y_pred[y_pred != y_test]) / len(y_test))
 
     return model
 
