@@ -11,7 +11,7 @@ def import_dataframe(dataframes):
 
     for df_name in dataframes:
         df = pd.read_csv(".\datasets_files\\" + df_name, index_col=[0],  sep=',', na_values=[''])
-        print(df.describe().transpose())
+        #print(df.describe().transpose())
         dictionary[df_name] = df
 
     return dictionary
@@ -23,7 +23,7 @@ if __name__ == '__main__':
         dataframes = f.read().splitlines()
 
     dict = import_dataframe(dataframes)
-    datasets = build_model(dict['auto'], 'auto')
+    datasets = build_model(dict['hepatitis'], 'hepatitis')
     #print(len(dict['auto'].columns))
     #print(datasets['auto'][0].weights)
 
