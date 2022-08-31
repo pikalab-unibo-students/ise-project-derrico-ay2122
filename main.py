@@ -23,7 +23,7 @@ if __name__ == '__main__':
         dataframes = f.read().splitlines()
 
     dict = import_dataframe(dataframes)
-    datasets = build_model(dict['hepatitis'], 'hepatitis')
+    datasets = build_model(dict['auto'], 'auto')
     #print(len(dict['auto'].columns))
     #print(datasets['auto'][0].weights)
 
