@@ -2,12 +2,13 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-import tensorflow_docs as tfdocs
 import tensorflow_docs.plots as plots
-#from tensorflow.python.client import device_lib
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
-from sklearn.metrics import accuracy_score, plot_confusion_matrix, confusion_matrix
-from sklearn.model_selection import train_test_split, KFold
+from keras import Sequential
+from keras.layers import Dense
+from keras.models import clone_model
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.preprocessing import StandardScaler
 
 import seaborn as sns
@@ -36,8 +37,6 @@ def dataset_preprocessing(df):
     le_target = LabelEncoder()
     df_new.loc[:, "target"] = le_target.fit_transform(df.loc[:, "target"])
 
-    #print(df_new['target'].unique())
-
     return df_new
 
 def create_datasets(df):
@@ -61,30 +60,55 @@ def plot_accuracy(history):
     plt.ylabel('Loss')
     plt.show()
 
+def model_compiling(model):
+    model.compile(loss='sparse_categorical_crossentropy',
+                  optimizer="adam",
+                  metrics=['accuracy'])
+
+def get_model(params):
+
+    nodes = params[1]
+    input_shape = params[0]
+    classes_number = params[2]
+
+    model = Sequential([
+        Dense(nodes, activation='relu',
+                              input_shape=[input_shape],
+                              kernel_regularizer=tf.keras.regularizers.L1(0.001)),
+        Dense(classes_number, activation='softmax')
+    ])
+
+    model_compiling(model)
+
+    return model
+
 def cross_fold(inputs, targets, model):
 
     # Define the K-fold Cross Validator
-    kfold = KFold(n_splits=5, shuffle=True)
+    stratifiedKFold = StratifiedKFold(n_splits=4, shuffle=True)
     acc_per_fold = []
     loss_per_fold = []
 
+    early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5, restore_best_weights=True)
+
     # K-fold Cross Validation model evaluation
     fold_no = 1
-    for train, test in kfold.split(inputs, targets):
+
+    for train, test in stratifiedKFold.split(inputs, targets):
+
+        crossed_model = clone_model(model)
+        model_compiling(crossed_model)
 
         # Generate a print
         print('------------------------------------------------------------------------')
         print(f'Training for fold {fold_no} ...')
 
-        early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
-
-        model.fit(inputs, targets, epochs=70, shuffle=True, callbacks=[early_stop])
-        #plot_accuracy(history)
+        crossed_model.fit(inputs, targets, batch_size=4, epochs=50, shuffle=True, callbacks=[early_stop])
 
         # Generate generalization metrics
-        scores = model.evaluate(inputs[test], targets[test], verbose=0)
+        scores = crossed_model.evaluate(inputs[test], targets[test], verbose=0)
         print(
-            f'Score for fold {fold_no}: {model.metrics_names[0]} of {scores[0]}; {model.metrics_names[1]} of {scores[1] * 100}%')
+            f'Score for fold {fold_no}: {crossed_model.metrics_names[0]} of {scores[0]}; {crossed_model.metrics_names[1]} of {scores[1] * 100}%')
         acc_per_fold.append(scores[1] * 100)
         loss_per_fold.append(scores[0])
 
@@ -94,24 +118,26 @@ def cross_fold(inputs, targets, model):
     print("Average accuracy: ", np.mean(acc_per_fold))
     print("Average loss: ", np.mean(loss_per_fold))
 
-def fit_model(df, model):
+def fit_model(df, parameters):
 
     x, y = create_datasets(df)
 
+    model = get_model(parameters)
     cross_fold(x, y, model)
 
-    y_pred = model.predict(x)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.20, stratify=y)
 
+    model.fit(x_train, y_train, batch_size=4, epochs=50, shuffle=True)
+
+    y_pred = model.predict(x_test)
     y_pred = y_pred.argmax(axis=-1)
 
-    print('Accuratezza:', accuracy_score(y, y_pred) * 100, '%')
+    print('Accuratezza:', accuracy_score(y_test, y_pred) * 100, '%')
 
     plt.figure(figsize=(16, 16))
-    cm = confusion_matrix(y, y_pred)
+    cm = confusion_matrix(y_test, y_pred)
     f = sns.heatmap(cm, annot=True)
     plt.show()
-
-    #print("Accuracy: ", len(y_pred[y_pred != y_test]) / len(y_test))
 
     return model
 
@@ -129,18 +155,8 @@ def build_model(df, df_name):
     dataset_and_models = {}
 
     for nodes in nodes_number:
-        model = tf.keras.Sequential([
-            tf.keras.layers.Dense(nodes, activation='relu',
-                                  input_shape=[input_shape],
-                                  kernel_regularizer=tf.keras.regularizers.L2(0.0001)),
-            tf.keras.layers.Dense(classes, activation='softmax')
-        ])
 
-        model.compile(loss='sparse_categorical_crossentropy',
-                      optimizer="adam",
-                      metrics=['accuracy'])
-
-        fit_model(df, model)
+        model = fit_model(df, (input_shape, nodes, classes))
         models.append(model)
 
     dataset_and_models[df_name] = models
