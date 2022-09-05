@@ -1,4 +1,4 @@
-,age,sex,cp_categorical,trestbps,chol,fbs,restecg_categorical,thalach,exang,oldpeak,slope_categorical,ca,thal_categorical,target
+,age,sex_boolean,cp_categorical,trestbps,chol,fbs_boolean,restecg_categorical,thalach,exang_boolean,oldpeak,slope_categorical,ca,thal_categorical,target
 0,63.0,1,1,145.0,233.0,1,2,150.0,0,2.3,3,0,1,0
 1,67.0,1,4,160.0,286.0,0,2,108.0,1,1.5,2,3,0,2
 2,67.0,1,4,120.0,229.0,0,2,129.0,1,2.6,2,2,2,1

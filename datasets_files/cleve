@@ -1,4 +1,4 @@
-,Age,Sex,Chest pain type_categorical,Trestbps,Cholesterol,Fasting blood sugar &lt; 120,Resting ecg_categorical,Max heart rate,Exercise induced angina,Oldpeak,Slope_categorical,Number of vessels colored,Thal_categorical,target
+,Age,Sex_boolean,Chest pain type_categorical,Trestbps,Cholesterol,Fasting blood sugar &lt_boolean; 120,Resting ecg_categorical,Max heart rate,Exercise induced angina_boolean,Oldpeak,Slope_categorical,Number of vessels colored,Thal_categorical,target
 0,68.0,1,3,118.0,277.0,0,2,151.0,0,1.0,2,1,3,0
 1,76.0,0,3,140.0,197.0,0,0,116.0,0,1.1,1,0,2,0
 2,45.0,0,0,130.0,234.0,0,1,175.0,0,0.6,1,0,2,0

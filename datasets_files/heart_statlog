@@ -1,4 +1,4 @@
-,age,sex,chest_categorical,resting_blood_pressure,serum_cholestoral,fasting_blood_sugar,resting_electrocardiographic_results_categorical,maximum_heart_rate_achieved,exercise_induced_angina,oldpeak,slope_categorical,number_of_major_vessels_categorical,thal_categorical,target
+,age,sex_boolean,chest_categorical,resting_blood_pressure,serum_cholestoral,fasting_blood_sugar_boolean,resting_electrocardiographic_results_categorical,maximum_heart_rate_achieved,exercise_induced_angina_boolean,oldpeak,slope_categorical,number_of_major_vessels_categorical,thal_categorical,target
 0,70.0,1.0,4.0,130.0,322.0,0.0,2.0,109.0,0.0,2.4,2.0,3.0,3.0,1
 1,67.0,0.0,3.0,115.0,564.0,0.0,2.0,160.0,0.0,1.6,2.0,0.0,7.0,0
 2,57.0,1.0,2.0,124.0,261.0,0.0,0.0,141.0,0.0,0.3,1.0,0.0,7.0,1
