@@ -1,5 +1,5 @@
-import numpy as np
-from pysmt.shortcuts import Symbol, Plus, Times, Real, Equals, Minus, LE, Implies, TRUE, FALSE, EqualsOrIff, GE
+from pysmt.shortcuts import Symbol, Plus, Times, Real, Equals, Minus, LE, Implies, TRUE, FALSE, EqualsOrIff, GE, And, \
+    is_sat
 from pysmt.typing import REAL, BOOL
 
 def define_number_of_outputs(model):
@@ -68,38 +68,44 @@ def define_integrity_constraints(support_symbol, output_symbol):
     y_condition = GE(output_symbol, Real(0))
     s_condition = GE(support_symbol, Real(0))
 
-    #print("First Constraint: ", first_integrity_constraint)
-    #print("Second Constraint: ", second_integrity_constraint)
-    #print("1) Support: ", y_condition)
-    #print("2) Support: ", s_condition)
-
-    integrity_constraints = [first_integrity_constraint, second_integrity_constraint,
-                             y_condition, s_condition]
+    integrity_constraints = And(first_integrity_constraint, second_integrity_constraint,
+                             y_condition, s_condition)
 
     return integrity_constraints
+
+
 
 def define_formula(variables, A, b):
     encoded_model = []
     for n_of_layer in range(len(variables)):
         constraints = []
+        integrity_constraint = []
         for output in A[n_of_layer]:
             constants = [Real(float(v)) for v in output]
             formula = Times(constants[0], variables[n_of_layer][0])
             for i in range(1, len(constants)):
                 formula = Plus(formula, Times(constants[i], variables[n_of_layer][i]))
-
+            #id of constraint
             constraint_id = A[n_of_layer].index(output)
+            #adding bias
             formula = Plus(formula, Real(float(b[n_of_layer][constraint_id])))
+            #create variables for output and support
             support_var = Symbol("s{0}_layer{1}".format(constraint_id+1, n_of_layer + 1), typename=REAL)
             output_var = Symbol("y{0}_layer{1}".format(constraint_id+1, n_of_layer + 1), typename=REAL)
+            #define right memeber of equivalence
             right_member = Minus(output_var, support_var)
-
+            #define constraint formula
             constraint = Equals(formula, right_member)
+            #define integrity constraint
             ci = define_integrity_constraints(support_var, output_var)
+            constraints.append(constraint)
+            integrity_constraint.append(ci)
 
-            constraints.append([constraint, ci])
+        integrity_constraints = And(integrity_constraint)
+        layer = And(constraints)
+        encoded_layer = And(layer, integrity_constraints)
 
-        encoded_model.append(constraints)
+        encoded_model.append(encoded_layer)
 
     return encoded_model
 
@@ -109,9 +115,5 @@ def encoding_model(model, df_name):
     ids = read_categorical_indexes(df_name)
     enc = define_vars(ids, inpt, outpt)
     formula = define_formula(enc, A, b)
-    for v in formula[0]:
-        print(v)
+    print("Is sat? ", is_sat(formula=formula[0], solver_name="yices-smt"))
 
-    #for number_of_layer in range(len(A)):
-     #   layer_weights = A[number_of_layer]
-        #print(len(layer_weights))
