@@ -13,17 +13,14 @@ from sklearn.preprocessing import StandardScaler
 
 import seaborn as sns
 
-def dataset_preprocessing(df):
+def dataset_preprocessing(df, df_name):
 
     df_new = df.copy()
-    categorical_features = [column for column in df.columns.values if "_categorical" in column]
+    categorical_features = [column for column in df.columns.values if ("_categorical" or "_boolean") in column]
     categorical_names = {}
 
-    print(df.columns)
     if categorical_features != []:
         for feature in categorical_features:
-            print("feature", feature)
-            print(df.loc[:, feature])
             le = LabelEncoder()
             le.fit(df.loc[:, feature])
             categorical_names[feature] = le.classes_
@@ -31,13 +28,20 @@ def dataset_preprocessing(df):
 
         temp = pd.get_dummies(df_new.loc[:, categorical_features], columns=categorical_features)
         df_new = df_new.loc[:, [v for v in df.columns if v not in categorical_features]].join(temp)
-        print(df_new.columns)
 
     # target as categorical
     le_target = LabelEncoder()
     df_new.loc[:, "target"] = le_target.fit_transform(df.loc[:, "target"])
 
+    print_categorical_indexes(df_new, df_name)
+
     return df_new
+
+def print_categorical_indexes(df, df_name):
+    ids = [df.columns.get_loc(col) for col in df.columns if "_" in col]
+    with open(".\datasets_boolean_index\\" + df_name + "\\" + df_name + '_categorical_indexes.txt', 'w') as f:
+        for id in ids:
+            f.write(str(id) + "\n")
 
 def create_datasets(df):
 
@@ -57,6 +61,7 @@ def plot_accuracy(history):
     plt.show()
 
     plotter.plot({'Basic': history}, metric="loss")
+    plotter.plot({'Basic': history}, metric="loss")
     plt.ylabel('Loss')
     plt.show()
 
@@ -72,20 +77,19 @@ def get_model(params):
     classes_number = params[2]
 
     model = Sequential([
-        Dense(nodes, activation='relu',
-                              input_shape=[input_shape],
-                              kernel_regularizer=tf.keras.regularizers.L1(0.001)),
-        Dense(classes_number, activation='softmax')
+        Dense(nodes, activation='relu', name="firstlayer",
+              input_shape=[input_shape], bias_initializer=tf.initializers.Constant(0.1)),
+        Dense(classes_number, name="secondlayer", activation='softmax')
     ])
 
-    model_compiling(model)
+    #model_compiling(model)
 
     return model
 
 def cross_fold(inputs, targets, model):
 
     # Define the K-fold Cross Validator
-    stratifiedKFold = StratifiedKFold(n_splits=4, shuffle=True)
+    stratifiedKFold = StratifiedKFold(n_splits=5, shuffle=True)
     acc_per_fold = []
     loss_per_fold = []
 
@@ -118,26 +122,26 @@ def cross_fold(inputs, targets, model):
     print("Average accuracy: ", np.mean(acc_per_fold))
     print("Average loss: ", np.mean(loss_per_fold))
 
-def fit_model(df, parameters):
+def fit_model(df, parameters, df_name):
 
     x, y = create_datasets(df)
 
     model = get_model(parameters)
     cross_fold(x, y, model)
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.20, stratify=y)
-
-    model.fit(x_train, y_train, batch_size=4, epochs=50, shuffle=True)
-
-    y_pred = model.predict(x_test)
-    y_pred = y_pred.argmax(axis=-1)
-
-    print('Accuratezza:', accuracy_score(y_test, y_pred) * 100, '%')
-
-    plt.figure(figsize=(16, 16))
-    cm = confusion_matrix(y_test, y_pred)
-    f = sns.heatmap(cm, annot=True)
-    plt.show()
+    # x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.20, stratify=y)
+    #
+    # model.fit(x_train, y_train, batch_size=4, epochs=50, shuffle=True)
+    #
+    # y_pred = model.predict(x_test)
+    # y_pred = y_pred.argmax(axis=-1)
+    #
+    # print('Accuratezza:', accuracy_score(y_test, y_pred) * 100, '%')
+    #
+    # plt.figure(figsize=(16, 16))
+    # cm = confusion_matrix(y_test, y_pred)
+    # f = sns.heatmap(cm, annot=True)
+    # plt.show()
 
     return model
 
@@ -147,7 +151,7 @@ def build_model(df, df_name):
     nodes_number = [20]
     models = []
 
-    df = dataset_preprocessing(df)
+    df = dataset_preprocessing(df, df_name)
 
     input_shape = len(df.columns) - 1
     classes = len(df['target'].unique())
@@ -156,7 +160,7 @@ def build_model(df, df_name):
 
     for nodes in nodes_number:
 
-        model = fit_model(df, (input_shape, nodes, classes))
+        model = fit_model(df, (input_shape, nodes, classes), df_name)
         models.append(model)
 
     dataset_and_models[df_name] = models
