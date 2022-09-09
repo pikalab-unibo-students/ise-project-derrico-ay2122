@@ -1,9 +1,6 @@
-# This is a sample Python script.
-
-# Press Maiusc+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
 import pandas as pd
+
+from encoding_functions import define_number_of_outputs, get_weights_and_bias, encoding_model
 from neural_net_functions import build_model
 
 def import_dataframe(dataframes):
@@ -23,8 +20,11 @@ if __name__ == '__main__':
         dataframes = f.read().splitlines()
 
     dict = import_dataframe(dataframes)
-    datasets = build_model(dict['auto'], 'auto')
-    #print(len(dict['auto'].columns))
-    #print(datasets['auto'][0].weights)
+    models = build_model(dict['heart_statlog'], 'heart_statlog')
+    encoding_model(models['heart_statlog'][0], 'heart_statlog')
+    #res = define_number_of_outputs(models['hepatitis'][0])
+    #get_weights_and_bias(models['hepatitis'][0])
+    #print(len(dict['hepatitis'].columns))
+    #print(models['hepatitis'][0].weights)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
