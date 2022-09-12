@@ -1,6 +1,5 @@
-from pysmt.shortcuts import Symbol, Plus, Times, Real, Equals, Minus, LE, Implies, TRUE, FALSE, EqualsOrIff, GE, And, \
-    is_sat
-from pysmt.typing import REAL, BOOL
+import numpy as np
+from pulp import *
 
 def define_number_of_outputs(model):
     outpt, inpt = [], []
@@ -48,8 +47,10 @@ def define_vars(categorical_ids, input_dim, output_dim):
     for input_dimension in input_dim:
         layer = []
         for i in range(input_dimension):
-            var_name = 'x{0}_layer{1}'.format(i + 1, number_of_layer)
-            layer.append(Symbol(var_name, typename=REAL))
+            var_name = 'x{0}_layer{1}'.format(i, number_of_layer)
+            x = LpVariable(name=var_name)
+            layer.append(x)
+            #layer.append(Symbol(var_name, typename=REAL))
             #layer.append(Symbol(var_name + "_real", typename=REAL) if not i in categorical_ids
                        #else Symbol(var_name + "_bool", typename=BOOL))
 
@@ -58,62 +59,105 @@ def define_vars(categorical_ids, input_dim, output_dim):
 
     return enc
 
-def define_integrity_constraints(support_symbol, output_symbol):
-    var_name = "z" + output_symbol.symbol_name().split("y", 1)[1]
-    z = Symbol(var_name, typename=BOOL)
+def define_integrity_constraints(s, y):
 
-    first_integrity_constraint = Implies(EqualsOrIff(z, TRUE()), LE(output_symbol, Real(0)))
-    second_integrity_constraint = Implies(EqualsOrIff(z, FALSE()), LE(support_symbol, Real(0)))
+    var_name = "z" + y.name.split("y", 1)[1]
+    constraints = []
+    z = LpVariable(var_name, 0, 1, cat='Integer')
+    M = sys.maxsize
 
-    y_condition = GE(output_symbol, Real(0))
-    s_condition = GE(support_symbol, Real(0))
+    constraints.append(y <= (1 - z) * M)
+    constraints.append(s <= z * M)
+    constraints.append(y >= 0)
+    constraints.append(s >= 0)
 
-    integrity_constraints = And(first_integrity_constraint, second_integrity_constraint,
-                             y_condition, s_condition)
+    return constraints
 
-    return integrity_constraints
+def define_objective_function(pb):
 
+    def split_name(variable):
+        return variable.name.split("_")
 
+    layers = list(set([split_name(v)[1] for v in pb.variables()]))
+    layers.sort()
+
+    def get_variables(var_name, layer):
+        return [v for v in pb.variables() if (var_name in split_name(v)[0]) & (layer in split_name(v)[1])]
+
+    def sort_variables(variables):
+        sorted(variables, key=lambda v: v.name)
+
+    def sum_variables(vars):
+        objective_function = None
+        n_vars = len(vars)
+        for i in range(n_vars):
+           objective_function += vars[i]
+
+        return objective_function
+
+    ys_part, zs_part = None, None
+
+    j = 0
+
+    for l in layers:
+        j = j + 1
+        ys = get_variables("y", l)
+        zs = get_variables("z", l)
+        sort_variables(ys), sort_variables(zs)
+        ys_part += sum_variables(ys)
+        zs_part += sum_variables(zs)
+
+    return lpSum([ys_part, zs_part])
 
 def define_formula(variables, A, b):
-    encoded_model = []
+
+    pb = pulp.LpProblem("MILP encoding for Machine Learning problem")
+
+    # per i 2 layer
     for n_of_layer in range(len(variables)):
-        constraints = []
-        integrity_constraint = []
-        for output in A[n_of_layer]:
-            constants = [Real(float(v)) for v in output]
-            formula = Times(constants[0], variables[n_of_layer][0])
-            for i in range(1, len(constants)):
-                formula = Plus(formula, Times(constants[i], variables[n_of_layer][i]))
-            #id of constraint
-            constraint_id = A[n_of_layer].index(output)
-            #adding bias
-            formula = Plus(formula, Real(float(b[n_of_layer][constraint_id])))
-            #create variables for output and support
-            support_var = Symbol("s{0}_layer{1}".format(constraint_id+1, n_of_layer + 1), typename=REAL)
-            output_var = Symbol("y{0}_layer{1}".format(constraint_id+1, n_of_layer + 1), typename=REAL)
-            #define right memeber of equivalence
-            right_member = Minus(output_var, support_var)
-            #define constraint formula
-            constraint = Equals(formula, right_member)
-            #define integrity constraint
-            ci = define_integrity_constraints(support_var, output_var)
-            constraints.append(constraint)
-            integrity_constraint.append(ci)
+        #per ogni input
+        for i in range(len(A[n_of_layer])):
+            formula = None
+            #per ogni variabile
+            for j in range(len(A[n_of_layer][i])):
+                formula += A[n_of_layer][i][j] * variables[n_of_layer][j]
 
-        integrity_constraints = And(integrity_constraint)
-        layer = And(constraints)
-        encoded_layer = And(layer, integrity_constraints)
+            formula += b[n_of_layer][i]
 
-        encoded_model.append(encoded_layer)
+            def right_variable(name):
+                return LpVariable(name=name + "{0}_layer{1}".format(i, n_of_layer + 1))
 
-    return encoded_model
+            y = right_variable("y")
+            s = right_variable("s")
+
+            formula = formula == y - s
+            pb += (formula, "Layer {0} constraint {1}".format(n_of_layer, i))
+            constraints = define_integrity_constraints(s, y)
+
+            j = 0
+            for c in constraints:
+                pb += (c, "Layer {0} integrity constraint {1}-{2}".format(n_of_layer, i, j))
+                j = j + 1
+
+    pb.objective = define_objective_function(pb)
+    print(pb)
+
+    return None
 
 def encoding_model(model, df_name):
     inpt, outpt = define_number_of_outputs(model)
+    print(inpt)
     A, b = get_weights_and_bias(model, inpt, outpt)
     ids = read_categorical_indexes(df_name)
     enc = define_vars(ids, inpt, outpt)
-    formula = define_formula(enc, A, b)
-    print("Is sat? ", is_sat(formula=formula[0], solver_name="yices-smt"))
+    define_formula(enc, A, b)
+
+    #print("const: ", len(constraints))
+    #print("constraint[0]: ", len(constraints[0]))
+
+    #print("blocks: ", len(blocks))
+    #print("first: ", len(blocks[0]))
+    #print("second: ", len(blocks[1]))
+    #print(formula[1])
+    #print("Is sat? ", is_sat(formula=formula[0], solver_name="mst"))
 
