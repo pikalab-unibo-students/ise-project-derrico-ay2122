@@ -61,24 +61,41 @@ def define_formula(categorical_ids, N_OF_LAYERS, A, b):
         return "B" if i in categorical_ids else "C"
 
     def get_type(variables_to_type):
-        return [v.split("-")[-1] for v in variables_to_type]
+        return [v.split("_")[-1] for v in variables_to_type]
 
     def get_variables_names(id):
-        suffix = '{0}_layer-{1}'.format(id, n_of_layer)
+        suffix = '{0}_layer_{1}'.format(id, n_of_layer)
         return ["y" + suffix, "s" + suffix]
 
     def drop_elements_from_list(initial, to_remove):
         return [v for v in initial if v not in to_remove]
 
     def decouple_couple(var_index, weights):
-        return [list(value) for value in zip(*[couple for couple in zip(var_index, w)])]
+        return [list(value) for value in zip(*[couple for couple in zip(var_index, weights)])]
+
+    def set_indicator_constraint(formula, support_variables):
+        import re
+        form = [int(v) for v in re.findall(r'\d+', support_variables[0])]
+        z_var = "z_{0}_layer_{1}".format(form[0], form[1])
+        formula.variables.add(names=[z_var], types=["B"])
+        idx = formula.variables.get_indices(support_variables)
+        first = True
+        for i in idx:
+            flag = 0 if first else 1; first = False
+            formula.indicator_constraints.add(indvar=z_var,
+                                              lin_expr=[[i], [1]],
+                                              sense="L",
+                                              rhs=0,
+                                              complemented=flag,
+                                              indtype=formula.indicator_constraints.type_.if_)
+
 
     n_of_layer = 0
 
     for n_of_layer in range(N_OF_LAYERS):
         w_id = 0
         variables = \
-            ['x-{0}_layer-{1}_type-{2}'.format(i, n_of_layer, set_type(i)) for i in range(len(A[n_of_layer][0]))]
+            ['x_{0}_layer_{1}_type_{2}'.format(i, n_of_layer, set_type(i)) for i in range(len(A[n_of_layer][0]))]
 
         pb.variables.add(names=variables, lb=[0] * len(variables), types=get_type(variables))
 
@@ -102,6 +119,8 @@ def define_formula(categorical_ids, N_OF_LAYERS, A, b):
                                       names=["c{0}".format(i)])
 
             variables = drop_elements_from_list(variables, support_variables)
+
+            set_indicator_constraint(pb, support_variables)
 
             w_id += 1
 
