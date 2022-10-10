@@ -114,10 +114,6 @@ if __name__ == '__main__':
         output_vars = ["X_{0}_layer_2_type_C".format(i) for i in range(len(output_values))]
 
         print("Prediction: ", output_values, " id predicted_class: ", output_values.index(1))
-        #
-        import time
-
-        start_time = time.time()
 
         len_expl, time = explaining_procedures(encoded_model, solver_name, (input_vars, input_values[0]), (output_vars, output_values))
         explanations.append(len_expl)
