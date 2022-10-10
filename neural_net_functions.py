@@ -13,13 +13,15 @@ from sklearn.preprocessing import StandardScaler
 
 import seaborn as sns
 
-def dataset_preprocessing(df, df_name):
+def dataset_preprocessing(df, df_name=None):
 
     df_new = df.copy()
-    categorical_features = [column for column in df.columns.values if ("_categorical" or "_boolean") in column]
+    categorical_features = [column for column in df.columns.values if "_categorical" in column or "_boolean" in column]
     categorical_names = {}
 
-    if categorical_features != []:
+    there_are_categorical_features = categorical_features != []
+
+    if there_are_categorical_features:
         for feature in categorical_features:
             le = LabelEncoder()
             le.fit(df.loc[:, feature])
@@ -33,12 +35,15 @@ def dataset_preprocessing(df, df_name):
     le_target = LabelEncoder()
     df_new.loc[:, "target"] = le_target.fit_transform(df.loc[:, "target"])
 
-    print_categorical_indexes(df_new, df_name)
+    if df_name is not None:
+        ite = filter(lambda x: [v for v in categorical_features if v in x], df_new.columns)
+        ids = [df_new.drop(columns="target").columns.get_loc(c) for c in list(ite)]
+        if there_are_categorical_features:
+            print_categorical_indexes(ids, df_name)
 
     return df_new
 
-def print_categorical_indexes(df, df_name):
-    ids = [df.columns.get_loc(col) for col in df.columns if "_" in col]
+def print_categorical_indexes(ids, df_name):
     with open(".\datasets_boolean_index\\" + df_name + "\\" + df_name + '_categorical_indexes.txt', 'w') as f:
         for id in ids:
             f.write(str(id) + "\n")
@@ -67,6 +72,7 @@ def plot_accuracy(history):
 
 def model_compiling(model):
     model.compile(loss='sparse_categorical_crossentropy',
+                  run_eagerly=True,
                   optimizer="adam",
                   metrics=['accuracy'])
 
@@ -146,22 +152,11 @@ def fit_model(df, parameters, df_name):
     return model
 
 #Procedura di creazione del modello
-def build_model(df, df_name):
-
-    nodes_number = [20]
-    models = []
-
-    df = dataset_preprocessing(df, df_name)
+def build_model(df, hidden_layer_nodes, df_name):
 
     input_shape = len(df.columns) - 1
     classes = len(df['target'].unique())
 
-    dataset_and_models = {}
+    model = fit_model(df, (input_shape, hidden_layer_nodes, classes), df_name)
 
-    for nodes in nodes_number:
-
-        model = fit_model(df, (input_shape, nodes, classes), df_name)
-        models.append(model)
-
-    dataset_and_models[df_name] = models
-    return dataset_and_models
+    return model
