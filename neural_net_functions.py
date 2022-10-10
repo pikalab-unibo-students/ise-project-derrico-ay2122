@@ -52,7 +52,6 @@ def create_datasets(df):
 
     columns = [c for c in df.columns if c != 'target']
     x, y = df.loc[:, columns], df.loc[:, 'target']
-    # Applica nomralizzazione con StandardScaler di scikit-learn
     x = StandardScaler().fit_transform(x)
 
     return x, y
