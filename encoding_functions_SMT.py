@@ -148,7 +148,7 @@ def explain_SMT(solver, hypos):
     cancel_file(fname)
     print_solver_assertion(fname, s)
 
-    rhypos = compute_minimal_SMT(copy_solver(solver), hypos)
+    rhypos = compute_minimal_SMT(solver, hypos)
 
     return rhypos
 
