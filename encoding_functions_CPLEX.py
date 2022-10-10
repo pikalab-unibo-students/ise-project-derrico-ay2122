@@ -143,7 +143,6 @@ def freeze_output_CPLEX(pb, output_vars, output_value):
     id_class = output_value.index(1)
 
     pb.linear_constraints.add(lin_expr=[[['c_{0}'.format(id_class)], [1]]], senses='E', rhs=[1], names=['neg_prediction'])
-    pb.write("Model_test.lp")
 
 
 def contains_variables(variables, all_variables_added):
