@@ -1,6 +1,9 @@
 import os
 import sys
 import cplex
+import numpy
+from pysat.examples.hitman import Hitman
+
 from encoding_utils_functions import generate_variables, get_variables_names
 
 
@@ -72,7 +75,7 @@ def set_indicator_constraint(formula, support_variables):
 def get_vars(formula, name):
     vars = [v for v in formula.variables.get_names() if name[0] in v] if len(name) == 1 \
         else [v for v in formula.variables.get_names() if name[0] in v and name[1] in v]
-    print("VARS: ", vars)
+
     return vars
 
 
@@ -156,6 +159,11 @@ def define_formula_CPLEX(categorical_ids, A, b):
     n_of_layers = len(A)
     pb = cplex.Cplex()
 
+    pb.set_log_stream(None)
+    pb.set_error_stream(None)
+    pb.set_warning_stream(None)
+    pb.set_results_stream(None)
+
     all_variables_added = []
     for n_of_layer in range(n_of_layers):
         w_id = 0
@@ -201,16 +209,23 @@ def define_formula_CPLEX(categorical_ids, A, b):
 
 def delete_hypos_and_output_constraint(pb):
 
-    vars_to_drop = get_vars(pb, ["w"])
+    vars_to_drop = get_vars(pb, ["c"])
+
+    print("VARS: ", vars_to_drop)
 
     linear_to_drop = [v for v in pb.linear_constraints.get_names() if "hypo" in v]
     indicator_to_drop = [v for v in pb.indicator_constraints.get_names() if "layer" not in v]
 
-    pb.linear_constraints.delete(linear_to_drop)
+    if linear_to_drop is not []:
+        linear_to_drop = list(set(linear_to_drop))
+        pb.linear_constraints.delete(linear_to_drop)
+
     pb.indicator_constraints.delete(indicator_to_drop)
     pb.linear_constraints.delete("neg_prediction")
 
     pb.variables.delete(vars_to_drop)
+
+    pb.write("clean_model.lp")
 
 
 def compute_minimal_CPLEX(oracle, hypos):
@@ -219,6 +234,7 @@ def compute_minimal_CPLEX(oracle, hypos):
         # simple deletion-based linear search
         for i, hypo in enumerate(hypos):
             oracle.linear_constraints.delete(hypo[0])
+
             oracle.solve()
             if oracle.solution.is_primal_feasible():
                 #print([oracle.solution.get_values(v) for v in oracle.variables.get_names()])
@@ -230,7 +246,112 @@ def compute_minimal_CPLEX(oracle, hypos):
 
         return rhypos
 
-def explain_CPLEX(oracle, hypos):
+def smallest_expl_CPLEX(oracle, hypos):
+
+    def add_hypos(set):
+        print("SET: ", set)
+        for h in set:
+            oracle.linear_constraints.add(lin_expr=hypos[h][1], senses=hypos[h][3],
+                                          rhs=hypos[h][2], names=[hypos[h][0]])
+    def reset_hypos():
+        for h in hypos:
+            if h[0] in oracle.linear_constraints.get_names():
+                oracle.linear_constraints.delete(h[0])
+
+    with Hitman(bootstrap_with=[[i for i in range(len(hypos))]]) as hitman:
+
+        # computing unit-size MCSes
+        for i, hypo in enumerate(hypos):
+
+             oracle.linear_constraints.delete(hypo[0])
+             oracle.solve()
+
+             if oracle.solution.is_primal_feasible():
+                 print("ipo: ", hypo)
+                 hitman.hit([i])
+
+             reset_hypos()
+             add_hypos([i for i in range(len(hypos))])
+
+        iters = 0
+        reset_hypos()
+
+        i = 0
+
+        while True:
+            hset = hitman.get()
+
+            iters += 1
+
+            print('iter: ', iters)
+            print('cand: ', hset)
+
+            add_hypos(hset)
+            print(oracle.linear_constraints.get_names())
+            oracle.solve()
+
+            if oracle.solution.is_primal_feasible():
+
+                to_hit = []
+                satisfied, falsified = [], []
+
+                #free vars are not fixed vars: C \ h
+                free_variables = list(set(range(len(hypos))).difference(set(hset)))
+                print("Free vars: ", free_variables)
+
+                model = oracle.solution
+
+                for h in free_variables:
+
+                    var, exp = hypos[h][1][0][0][0], hypos[h][2][0]
+                    print("Var: ", var)
+                    print("Value: ", exp)
+
+                    if "_C" in var:
+                        true_val = float(model.get_values(var))
+                        print("True value UP: ", true_val)
+                        add = not (exp - 0.001 <= true_val <= exp + 0.001)
+                    else:
+                        true_val = int(model.get_values(var))
+                        print("True value DOWN: ", true_val)
+                        add = exp != true_val
+
+                    print("Is falsified? ", add)
+                    if add:
+                        falsified.append(h)
+                    else:
+                        hset.append(h)
+
+                #falsified + satisfied = C \ h
+                print("Unsatisfied: ", falsified)
+                print("hset: ", hset)
+
+                reset_hypos()
+                for u in falsified:
+                    print("u: ", u)
+                    to_add = [u] + hset
+                    print("To add: ", to_add)
+                    add_hypos(to_add)
+
+                    #oracle.write("model_with_last_hypo_{0}".format(i))
+                    oracle.solve()
+
+                    if oracle.solution.is_primal_feasible():
+                        print("not to hit: ", u)
+                        hset.append(u)
+                    else:
+                        print("to hit: ", u)
+                        to_hit.append(u)
+
+                    reset_hypos()
+
+                print("coex: ", to_hit)
+                hitman.hit(to_hit)
+            else:
+                print("return ", hset)
+                return hset
+
+def minimal_expl_CPLEX(oracle, hypos):
 
     oracle.solve()
     if oracle.solution.is_primal_feasible():
