@@ -1,7 +1,9 @@
+import math
 import os
 import sys
 import cplex
 import numpy
+import numpy as np
 from pysat.examples.hitman import Hitman
 
 from encoding_utils_functions import generate_variables, get_variables_names
@@ -42,7 +44,7 @@ def get_weights_and_bias(model, n_layers):
 
 
 def read_categorical_indexes(df_name):
-    path = ".\datasets_boolean_index\\" + df_name + "\\" + df_name + "_categorical_indexes.txt"
+    path = ".\datasets_categorical_index\\" + df_name + "\\" + df_name + "_categorical_indexes.txt"
 
     ids = []
     if os.path.exists(path):
@@ -179,7 +181,10 @@ def define_formula_CPLEX(categorical_ids, A, b):
 
         for i in range(len(A[n_of_layer])):
             weights = A[n_of_layer][i].tolist()
-            weights.extend([-1, +1])
+            if n_of_layer == 0:
+                weights.extend([-1, +1])
+            else:
+                weights.extend([-1])
 
             rhs = -1 * b[n_of_layer][i]
 
@@ -187,10 +192,15 @@ def define_formula_CPLEX(categorical_ids, A, b):
 
             if not support_variables[0] in all_variables_added:
                 sup_vars_n = len(support_variables)
-                pb.variables.add(names=support_variables, lb=[0] * sup_vars_n, types=["C"] * sup_vars_n)
+                print(support_variables)
+                if n_of_layer + 1 < 2:
+                    pb.variables.add(names=support_variables, lb=[0] * sup_vars_n, types=["C"] * sup_vars_n)
+                else:
+                    pb.variables.add(names=support_variables, lb=[(float("inf") * -1)] * sup_vars_n, types=["C"] * sup_vars_n)
                 all_variables_added.extend(support_variables)
 
             variables.extend(support_variables)
+
             var_ids = pb.variables.get_indices(name=variables)
             idx, w = decouple_couple(var_ids, weights)
 
@@ -199,7 +209,10 @@ def define_formula_CPLEX(categorical_ids, A, b):
                                       names=["constraint_{0}".format(i)])
 
             variables = drop_elements_from_list(variables, support_variables)
-            set_indicator_constraint(pb, support_variables)
+
+            if n_of_layer == 0:
+                set_indicator_constraint(pb, support_variables)
+
             w_id += 1
 
     pb.write("encoded_with_cplex_solver.lp")
@@ -210,8 +223,6 @@ def define_formula_CPLEX(categorical_ids, A, b):
 def delete_hypos_and_output_constraint(pb):
 
     vars_to_drop = get_vars(pb, ["c"])
-
-    print("VARS: ", vars_to_drop)
 
     linear_to_drop = [v for v in pb.linear_constraints.get_names() if "hypo" in v]
     indicator_to_drop = [v for v in pb.indicator_constraints.get_names() if "layer" not in v]
@@ -225,14 +236,83 @@ def delete_hypos_and_output_constraint(pb):
 
     pb.variables.delete(vars_to_drop)
 
-    pb.write("clean_model.lp")
+
+def generate_matrix(sample):
+    sz = int(math.sqrt(len(sample)))
+    # original image
+    pixels2 = []  # this will contain an array of m
+    for i in range(sz):
+        row1, row2 = [], []
+        for j, v in enumerate(sample[(i * sz):(i + 1) * sz]):
+            id_pixel = i * sz + j
+            row2.append(id_pixel)
+
+        pixels2.append(np.array(row2))
+
+    return np.array(pixels2)
+
+
+def clockwise_sorted(a, key=None, reverse=False):
+    nr, nc = a.shape
+    res = a.tolist()
+    sa = a.ravel().tolist()
+    if key is None:
+        sa.sort(reverse=reverse)
+    else:
+        sa.sort(key=key, reverse=reverse)
+    res[0] = sa[:nc]
+    cur, lenr, lenc = nc, nr - 1, nc - 1
+    x, y = 0, nc - 1
+    while (lenc > 0 and lenr > 0):
+        # go down, then go left
+        for _ in range(lenr):
+            x += 1
+            res[x][y] = sa[cur]
+            cur += 1
+        for _ in range(lenc):
+            y -= 1
+            res[x][y] = sa[cur]
+            cur += 1
+        lenr -= 1
+        lenc -= 1
+
+        # go up, then go right
+        for _ in range(lenr):
+            x -= 1
+            res[x][y] = sa[cur]
+            cur += 1
+        for _ in range(lenc):
+            y += 1
+            res[x][y] = sa[cur]
+            cur += 1
+        lenr -= 1
+        lenc -= 1
+
+    return np.array([k for j in res for k in j])
+
+
+def sort_hypos(hypos):
+
+    orientation = clockwise_sorted(generate_matrix([i for i in range(len(hypos))]))
+    print("Order: ", orientation)
+    for i in range(len(hypos)):
+        hypos[i] = list(hypos[i])
+        hypos[i][4] = orientation[i]
+        hypos[i] = tuple(hypos[i])
+
+    hypos.sort(key=lambda x: x[4])
+    #print(hypos)
+
+    return hypos
 
 
 def compute_minimal_CPLEX(oracle, hypos):
         rhypos = []
+        #hypos = sort_hypos(hypos.copy())
 
         # simple deletion-based linear search
         for i, hypo in enumerate(hypos):
+            #print("Hypo number: ", i)
             oracle.linear_constraints.delete(hypo[0])
 
             oracle.solve()
@@ -249,7 +329,7 @@ def compute_minimal_CPLEX(oracle, hypos):
 def smallest_expl_CPLEX(oracle, hypos):
 
     def add_hypos(set):
-        print("SET: ", set)
+        #print("SET: ", set)
         for h in set:
             oracle.linear_constraints.add(lin_expr=hypos[h][1], senses=hypos[h][3],
                                           rhs=hypos[h][2], names=[hypos[h][0]])
@@ -267,7 +347,7 @@ def smallest_expl_CPLEX(oracle, hypos):
              oracle.solve()
 
              if oracle.solution.is_primal_feasible():
-                 print("ipo: ", hypo)
+                 #print("ipo: ", hypo)
                  hitman.hit([i])
 
              reset_hypos()
@@ -297,55 +377,55 @@ def smallest_expl_CPLEX(oracle, hypos):
 
                 #free vars are not fixed vars: C \ h
                 free_variables = list(set(range(len(hypos))).difference(set(hset)))
-                print("Free vars: ", free_variables)
+                #print("Free vars: ", free_variables)
 
                 model = oracle.solution
 
                 for h in free_variables:
 
                     var, exp = hypos[h][1][0][0][0], hypos[h][2][0]
-                    print("Var: ", var)
-                    print("Value: ", exp)
+                    #print("Var: ", var)
+                    #print("Value: ", exp)
 
                     if "_C" in var:
                         true_val = float(model.get_values(var))
-                        print("True value UP: ", true_val)
+                        #print("True value UP: ", true_val)
                         add = not (exp - 0.001 <= true_val <= exp + 0.001)
                     else:
                         true_val = int(model.get_values(var))
-                        print("True value DOWN: ", true_val)
+                        #print("True value DOWN: ", true_val)
                         add = exp != true_val
 
-                    print("Is falsified? ", add)
+                    #print("Is falsified? ", add)
                     if add:
                         falsified.append(h)
                     else:
                         hset.append(h)
 
                 #falsified + satisfied = C \ h
-                print("Unsatisfied: ", falsified)
-                print("hset: ", hset)
+                #print("Unsatisfied: ", falsified)
+                #print("hset: ", hset)
 
                 reset_hypos()
                 for u in falsified:
-                    print("u: ", u)
+                    #print("u: ", u)
                     to_add = [u] + hset
-                    print("To add: ", to_add)
+                    #print("To add: ", to_add)
                     add_hypos(to_add)
 
                     #oracle.write("model_with_last_hypo_{0}".format(i))
                     oracle.solve()
 
                     if oracle.solution.is_primal_feasible():
-                        print("not to hit: ", u)
+                        #print("not to hit: ", u)
                         hset.append(u)
                     else:
-                        print("to hit: ", u)
+                        #print("to hit: ", u)
                         to_hit.append(u)
 
                     reset_hypos()
 
-                print("coex: ", to_hit)
+                #print("coex: ", to_hit)
                 hitman.hit(to_hit)
             else:
                 print("return ", hset)
