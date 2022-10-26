@@ -6,4 +6,4 @@ def generate_variables(layer, categorical_ids, n_vars):
 
 def get_variables_names(id, n_of_layer):
     suffix = '_{0}_layer_{1}_type_C'.format(id, n_of_layer+1)
-    return ["X" + suffix, "S" + suffix]
+    return ["X" + suffix, "S" + suffix] if n_of_layer == 0 else ["X" + suffix]
