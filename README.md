@@ -68,4 +68,48 @@ This is the list of considered datasets, from Penn & UCI repositories of benchma
 
 ```-e``` parameter let decide what kind of explanation realize, between subset- and cardinality-minimal explanations, following Algorithm 1 and Algorithm 2 respectively
 
-```-s``` parameter is releated to the two possible oracles which can be used for the experiment: Cplex and SMT solvers.
+```-s``` parameter is releated to the two possible solvers which can be used as oracles for the experiment: Cplex and SMT solvers.
+
+### Reproducing the results
+Working with MNIST Dataset means to have the possibility of visualizing the computed explanations. The following code draws the image rapresented by a sample from MNIST dataset with the explanation of the prediction made by the classifier:
+```
+def save_images(sample, expl, pattern_id):
+
+        # image size
+        sz = int(math.sqrt(len(sample)))
+
+        light_blue_rgba = tuple([0, 255, 255, 230.0])
+        white_rgba = tuple([255, 255, 255, 255.0])
+        red_rgba = tuple([186, 6, 6, 255.0])
+        black_rgba = tuple([0, 0, 0, 255.0])
+
+        # original image
+        pixels1, pixels2 = [], []  # this will contain an array of masked pixels
+        for i in range(sz):
+            row1, row2 = [], []
+            for j, v in enumerate(sample[(i * sz):(i + 1) * sz]):
+                id_pixel = i * sz + j
+
+                if v == 1:
+                    if id_pixel in expl:
+                        row1.append(light_blue_rgba)
+                    else:
+                        row1.append(white_rgba)
+
+                    row2.append(white_rgba)
+                else:
+                    if id_pixel in expl:
+                        row1.append(red_rgba)
+                    else:
+                        row1.append(black_rgba)
+
+                    row2.append(black_rgba)
+
+            pixels1.append(row1)
+            pixels2.append(row2)
+
+        pixels1 = np.asarray(pixels1, dtype=np.uint8)
+        pixels2 = np.asarray(pixels2, dtype=np.uint8)
+        mpimg.imsave('.\\images\\sample{0}-patch.png'.format(pattern_id), pixels1, cmap=mpcm.gray, dpi=5)
+        mpimg.imsave('.\\images\\sample{0}-orig.png'.format(pattern_id), pixels2, cmap=mpcm.gray, dpi=5)
+```
