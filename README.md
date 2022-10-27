@@ -72,7 +72,7 @@ This is the list of considered datasets, from Penn & UCI repositories of benchma
 
 ### Reproducing the results
 Working with MNIST Dataset means to have the possibility of visualizing the computed explanations. The following code draws the image rapresented by a sample from MNIST dataset with the explanation of the prediction made by the classifier:
-```
+```python
 def save_images(sample, expl, pattern_id):
 
         # image size
