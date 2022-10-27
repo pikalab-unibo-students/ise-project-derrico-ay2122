@@ -117,7 +117,7 @@ def save_images(sample, expl, pattern_id):
 
 ## Citations
 
-This work is born as a reproduction of the above quoted study, but this is not the only material used.
+This work is born as a reproduction of the above quoted study, but this is not the only material used.\\
 Here some "hot stuff":
 
 ```
