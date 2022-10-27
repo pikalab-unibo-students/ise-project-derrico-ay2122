@@ -31,7 +31,13 @@ After the reading, the datas are preprocessed; these are the steps:
 1. The names of the columns of the datasets contain indications on the type of features and they are used for the One Hot Encoding of the categorical features.
 2. The ***target*** column with the indication of the class is LabelEncoded with value between 0 and n_classes-1.
 
-Every dataset is associated to a file which contains the indices of the categorical and boolean columns, that are used during the NN encoding phase.
+Every dataset is associated to a file which contains the indices of the categorical and boolean columns, indices that are used during the NN encoding phase.
 These files are in ***datasets_categorical_index*** folder.
+
+### Training a NN
+Before extracting explanations, a Neural Net model must be trained:
+
+$ main.py -n ***number_of_node*** [...]
+Here, a Neural Net with one hidden layer with ***number_of_node*** is trained, if not already present in the ***models*** path. So, the first time, the created model trained and saved in the file models/***dataset_name***_***number_of_node*** folder.
 
 
