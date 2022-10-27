@@ -47,3 +47,18 @@ A rigorous abduction-based explanation for the samples of a dataset can be compu
 $ main.py -n 𝑛𝑢𝑚𝑏𝑒𝑟_𝑜𝑓_𝑛𝑜𝑑𝑒 -d 𝑑𝑎𝑡𝑎𝑠𝑒𝑡_𝑛𝑎𝑚𝑒 -e 𝑡𝑦𝑝𝑒_𝑜𝑓_𝑒𝑥𝑝𝑙𝑎𝑛𝑎𝑡𝑖𝑜𝑛 -s 𝑡𝑦𝑝𝑒_𝑜𝑓_𝑠𝑜𝑙𝑣𝑒𝑟_𝑢𝑠𝑒𝑑
 ```
 
+It's possible to set a precise number of nodes for the hidden layer using the parameter ``` -e ```, as said above: for the experiment they have been considered NN with i ∈ {10, 15, 20} neurons.
+
+With the parameter ```-d``` a dataset, whose samples will be explained, can be choosen.
+This is the list of considered datasets from Penn & UCI repositories of benchmark dataset:
+* australian
+* auto
+* backache
+* breast_cancer
+* cleve
+* cleveland
+* glass
+* glass2
+* heart_statlog
+* spect
+* voting
