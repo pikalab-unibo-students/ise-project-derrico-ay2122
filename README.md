@@ -23,9 +23,15 @@ The script has a number of parameters, which can be set from the command line. T
 $ main.py -h
 ```
 
-### Datasets
+### Data reading and preprocessing
 
-The script uses datasets in the CSV format. They are in the **dataset_files**. For this, you need to do a few steps:
+The script uses datasets in the CSV format: they are in the ***dataset_files*** path.
+After the reading, the datas are preprocessed; these are the steps:
 
-1. Assume your dataset is stored in file ```datasets_files/dataset.csv```.
-2. Create another file named ```somepath/dataset.csv.catcol``` that contains the indices of the categorical columns of ```somepath/dataset.csv```. For instance, if columns ```0```, ```1```, and ```5``` contain categorical data, the file should contain the lines
+1. The names of the columns of the datasets contain indications on the type of features and they are used for the One Hot Encoding of the categorical features.
+2. The ***target*** column with the indication of the class is LabelEncoded with value between 0 and n_classes-1.
+
+Every dataset is associated to a file which contains the indices of the categorical and boolean columns, that are used during the NN encoding phase.
+These files are in ***datasets_categorical_index*** folder.
+
+
