@@ -34,6 +34,8 @@ After the reading, the datas are preprocessed; these are the steps:
 Every dataset is associated to a file which contains the indices of the categorical and boolean columns, indices that are used during the NN encoding phase.
 These files are in ***datasets_categorical_index*** folder.
 
+MNIST Dataset is further elaborated: after the classes labelling, every pixel of the images is forced to be only white or black, because only 0 and 1 values are allowed; every intermediate values are properly rounded.
+
 ### Training a NN
 Before extracting explanations, a Neural Net model must be trained:
 ```
@@ -50,7 +52,7 @@ $ main.py -n 𝑛𝑢𝑚𝑏𝑒𝑟_𝑜𝑓_𝑛𝑜𝑑𝑒 -d 𝑑𝑎𝑡�
 It's possible to set a precise number of nodes for the hidden layer using the parameter ``` -e ```, as said above: for the experiment they have been considered NN with i ∈ {10, 15, 20} neurons.
 
 With the parameter ```-d``` a dataset, whose samples will be explained, can be choosen.
-This is the list of considered datasets from Penn & UCI repositories of benchmark dataset:
+This is the list of considered datasets, from Penn & UCI repositories of benchmark dataset:
 * australian
 * auto
 * backache
@@ -62,3 +64,4 @@ This is the list of considered datasets from Penn & UCI repositories of benchmar
 * heart_statlog
 * spect
 * voting
+* MNIST dataset
