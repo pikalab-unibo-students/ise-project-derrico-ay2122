@@ -37,13 +37,13 @@ These files are in ***datasets_categorical_index*** folder.
 ### Training a NN
 Before extracting explanations, a Neural Net model must be trained:
 ```
-$ main.py -n ***number_of_node*** [...]
+$ main.py -n 𝑛𝑢𝑚𝑏𝑒𝑟_𝑜𝑓_𝑛𝑜𝑑𝑒 [...]
 ```
 Here, a Neural Net with one hidden layer with ***number_of_node*** nodes is trained, if not already present in the ***models*** path. So, the first time, the created model is trained and saved in "models/***dataset_name***_***number_of_node***" folder, and then it becomes available for reproducing the experiment for a second time.
 
 ### Computing a formal explanation
 A rigorous abduction-based explanation for the samples of a dataset can be computed by running the following command:
 ```
-$ main.py -n ***number_of_node*** -d ***dataset_name*** -e ***type_of_explanation*** -s ***type_solver_used***
+$ main.py -n 𝑛𝑢𝑚𝑏𝑒𝑟_𝑜𝑓_𝑛𝑜𝑑𝑒 -d 𝑑𝑎𝑡𝑎𝑠𝑒𝑡_𝑛𝑎𝑚𝑒 -e 𝑡𝑦𝑝𝑒_𝑜𝑓_𝑒𝑥𝑝𝑙𝑎𝑛𝑎𝑡𝑖𝑜𝑛 -s 𝑡𝑦𝑝𝑒_𝑜𝑓_𝑠𝑜𝑙𝑣𝑒𝑟_𝑢𝑠𝑒𝑑
 ```
 
