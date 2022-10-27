@@ -39,6 +39,6 @@ Before extracting explanations, a Neural Net model must be trained:
 ```
 $ main.py -n ***number_of_node*** [...]
 ```
-Here, a Neural Net with one hidden layer with ***number_of_node*** nodes is trained, if not already present in the ***models*** path. So, the first time, the created model is trained and saved in the file models/'***dataset_name***_***number_of_node***' folder, and so it's available 
+Here, a Neural Net with one hidden layer with ***number_of_node*** nodes is trained, if not already present in the ***models*** path. So, the first time, the created model is trained and saved in the file "models/***dataset_name***_***number_of_node***" folder, and then it becomes available for reproducing the experiment for a second time
 
 
