@@ -114,3 +114,28 @@ def save_images(sample, expl, pattern_id):
         mpimg.imsave('.\\images\\sample{0}-patch.png'.format(pattern_id), pixels1, cmap=mpcm.gray, dpi=5)
         mpimg.imsave('.\\images\\sample{0}-orig.png'.format(pattern_id), pixels2, cmap=mpcm.gray, dpi=5)
 ```
+
+## Citations
+
+This work is born as a reproduction of the above quoted study, but this is not the only material used.
+Here some "hot stuff":
+
+```
+@inproceedings{inms-neurips19,
+  author    = {Alexey Ignatiev and
+               Nina Narodytska and
+               Joao Marques-Silva},
+  title     = {On Relating Explanations and Adversarial Examples},
+  booktitle = {NeurIPS},
+  year      = {2019}
+}
+
+@inproceedings{iisms-aaai22a,
+  author    = {Alexey Ignatiev and
+               Yacine Izza and
+               Peter J. Stuckey and
+               Joao Marques-Silva},
+  title     = {Using MaxSAT for Efficient Explanations of Tree Ensembles},
+  booktitle = {AAAI},
+  year      = {2022},
+}
