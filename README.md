@@ -72,7 +72,7 @@ This is the list of considered datasets, from Penn & UCI repositories of benchma
 
 ### Reproducing the results
 Working with MNIST Dataset means to have the possibility of visualizing the computed explanations. 
-The following code draws the image rapresented by a sample from MNIST dataset with the explanation of the prediction made by the classifier: it's drawn the original image with the white number on the black background, with the red pixel which show how the model sees the image, in order to make its prediction.
+The following code draws the image rapresented by a sample from MNIST dataset with the explanation of the prediction made by the classifier: the original image is drawn with the white number on the black background, with the red pixels which show how the model sees the image, in order to make its prediction.
 ```python
 def save_images(sample, expl, pattern_id):
 
