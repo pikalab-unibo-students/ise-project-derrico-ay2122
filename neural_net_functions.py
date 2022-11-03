@@ -39,7 +39,6 @@ def dataset_preprocessing(df, df_name=None):
     else:
         df_new = df.copy()
         categorical_features = [column for column in df.columns.values if "_categorical" in column]
-        print(categorical_features)
         categorical_names = {}
 
         there_are_categorical_features = categorical_features != []
@@ -51,8 +50,8 @@ def dataset_preprocessing(df, df_name=None):
                 categorical_names[feature] = le.classes_
                 df_new.loc[:, feature] = le.transform(df.loc[:, feature])
 
-            temp = pd.get_dummies(df_new.loc[:, categorical_features], columns=categorical_features)
-            df_new = df_new.loc[:, [v for v in df.columns if v not in categorical_features]].join(temp)
+            #temp = pd.get_dummies(df_new.loc[:, categorical_features], columns=categorical_features)
+            #df_new = df_new.loc[:, [v for v in df.columns if v not in categorical_features]].join(temp)
 
         # target as categorical
         le_target = LabelEncoder()
@@ -60,21 +59,27 @@ def dataset_preprocessing(df, df_name=None):
 
         for column in df.columns.values:
             if "_boolean" in column:
+                there_are_boolean = True
                 categorical_features.append(column)
 
         if df_name is not None:
             ite = filter(lambda x: [v for v in categorical_features if v in x], df_new.columns)
             ids = [df_new.drop(columns="target").columns.get_loc(c) for c in list(ite)]
-            if there_are_categorical_features:
-                print_categorical_indexes(ids, df_name)
+
+            attrs = []
+            for i in ids:
+                attrs.append([i, df_new.iloc[:, i].min(), df_new.iloc[:, i].max()])
+
+            if there_are_categorical_features or there_are_boolean:
+                print_categorical_indexes(attrs, df_name)
 
         return df_new
 
 
-def print_categorical_indexes(ids, df_name):
+def print_categorical_indexes(attrs, df_name):
     with open(".\datasets_categorical_index\\" + df_name + "\\" + df_name + '_categorical_indexes.txt', 'w') as f:
-        for id in ids:
-            f.write(str(id) + "\n")
+        for v in attrs:
+            f.write(str(int(v[0])) + "_" + str(int(v[1])) + "_" + str(int(v[2])) + "\n")
 
 
 def create_datasets(df):
@@ -171,7 +176,7 @@ def fit_model(df, parameters, df_name):
     model = get_model(parameters)
     #cross_fold(x, y, model)
     model_compiling(model)
-    model.fit(x, y, batch_size=4, epochs=100, shuffle=True)
+    model.fit(x, y, batch_size=4, epochs=10, shuffle=True)
 
     # x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.20, stratify=y)
     #
