@@ -2,11 +2,10 @@ import math
 import os
 import sys
 import cplex
-import numpy
 import numpy as np
 from pysat.examples.hitman import Hitman
 
-from encoding_utils_functions import generate_variables, get_variables_names
+from encoding_utils_functions import generate_variables, get_variables_names, separate_vars, get_max
 
 
 def define_number_of_outputs(model):
@@ -49,8 +48,9 @@ def read_categorical_indexes(df_name):
     ids = []
     if os.path.exists(path):
         with open(path) as f:
-            ids = f.read().splitlines()
-        ids = [int(v) for v in ids]
+            lines = f.read().splitlines()
+        for v in lines:
+            ids.append([int(e) for e in v.split("_")])
 
     return ids
 
@@ -79,10 +79,6 @@ def get_vars(formula, name):
         else [v for v in formula.variables.get_names() if name[0] in v and name[1] in v]
 
     return vars
-
-
-def get_type(variables_to_type):
-    return [v.split("_")[-1] for v in variables_to_type]
 
 
 def drop_elements_from_list(initial, to_remove):
@@ -177,7 +173,13 @@ def define_formula_CPLEX(categorical_ids, A, b):
 
         if not contains_variables(variables, all_variables_added):
             all_variables_added.extend(variables)
-            pb.variables.add(names=variables, lb=[0] * len(variables), types=get_type(variables))
+            real, boolean, integers = separate_vars(variables)
+            max_values = get_max(integers)
+
+            pb.variables.add(names=integers, lb=[0] * len(integers), ub=max_values, types=["I"] * len(integers))
+            pb.variables.add(names=real, types=["C"] * len(real))
+            pb.variables.add(names=boolean, types=["B"] * len(boolean))
+            #pb.variables.add(names=not_cat, types=)
 
         for i in range(len(A[n_of_layer])):
             weights = A[n_of_layer][i].tolist()
@@ -384,16 +386,12 @@ def smallest_expl_CPLEX(oracle, hypos):
                 for h in free_variables:
 
                     var, exp = hypos[h][1][0][0][0], hypos[h][2][0]
-                    #print("Var: ", var)
-                    #print("Value: ", exp)
 
                     if "_C" in var:
                         true_val = float(model.get_values(var))
-                        #print("True value UP: ", true_val)
                         add = not (exp - 0.001 <= true_val <= exp + 0.001)
                     else:
                         true_val = int(model.get_values(var))
-                        #print("True value DOWN: ", true_val)
                         add = exp != true_val
 
                     #print("Is falsified? ", add)
@@ -403,17 +401,12 @@ def smallest_expl_CPLEX(oracle, hypos):
                         hset.append(h)
 
                 #falsified + satisfied = C \ h
-                #print("Unsatisfied: ", falsified)
-                #print("hset: ", hset)
 
                 reset_hypos()
                 for u in falsified:
-                    #print("u: ", u)
                     to_add = [u] + hset
-                    #print("To add: ", to_add)
                     add_hypos(to_add)
 
-                    #oracle.write("model_with_last_hypo_{0}".format(i))
                     oracle.solve()
 
                     if oracle.solution.is_primal_feasible():
