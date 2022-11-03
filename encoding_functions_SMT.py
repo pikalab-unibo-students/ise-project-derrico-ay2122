@@ -5,7 +5,7 @@ from pysmt.shortcuts import Symbol, Implies, Iff, TRUE, LE, Real, FALSE, GE, And
     Or, Plus, Not, ExactlyOne
 from pysmt.typing import REAL, INT, BOOL
 
-from encoding_utils_functions import generate_variables, get_variables_names
+from encoding_utils_functions import generate_variables, get_variables_names, separate_vars, get_max
 
 
 def SMT_indicator_constraints(y, s):
@@ -63,13 +63,17 @@ def define_formula_SMT(categorical_ids, A, b):
             to_add = {v_name: Symbol(v_name, REAL) for v_name in variables_names}
             all_vars.update(to_add)
             variables = list(to_add.values())
+
+            _, boolean, integers = separate_vars([v.symbol_name() for v in variables])
+            not_real = boolean + integers
+            max_values = get_max(not_real)
+
+            categorical_boundaries = [
+                ExactlyOne([Equals(all_vars[not_real[i]], Real(k)) for k in range(0, max_values[i] + 1)])
+                                                                   for i in range(len(max_values))]
+            solver.add_assertions(categorical_boundaries)
         else:
             variables = [v[1] for v in all_vars.items() if v[0] in variables_names]
-
-        categorical_boundaries = [ExactlyOne(Equals(v, Real(0)), Equals(v, Real(1))) for v in
-                       [all_vars[k] for k in all_vars.keys() if "_type_B" in k and all_vars[k] in variables]]
-
-        solver.add_assertions(categorical_boundaries)
 
         n_vars = len(variables)
         n_outputs = len(A[n_of_layer])
