@@ -1,4 +1,4 @@
-,AGE,SEX_categorical,STEROID_categorical,ANTIVIRALS_categorical,FATIGUE_categorical,MALAISE_categorical,ANOREXIA_categorical,LIVER BIG_categorical,LIVER FIRM_categorical,SPLEEN PALPABLE_categorical,SPIDERS_categorical,ASCITES_categorical,VARICES_categorical,BILIRUBIN,ALK PHOSPHATE,SGOT,ALBUMIN,PROTIME,HISTOLOGY_categorical,target
+,AGE,SEX_boolean,STEROID_categorical,ANTIVIRALS_boolean,FATIGUE_categorical,MALAISE_categorical,ANOREXIA_categorical,LIVER BIG_categorical,LIVER FIRM_categorical,SPLEEN PALPABLE_categorical,SPIDERS_categorical,ASCITES_categorical,VARICES_categorical,BILIRUBIN,ALK PHOSPHATE,SGOT,ALBUMIN,PROTIME,HISTOLOGY_boolean,target
 0,36.0,1,1,2,1,1,1,1,1,1,1,1,1,3,10,44,16,44,2,2
 1,45.0,1,1,1,1,1,1,1,1,1,1,1,1,10,76,55,18,42,2,2
 2,47.0,1,0,1,1,1,1,1,1,1,1,1,1,34,83,67,29,44,1,2

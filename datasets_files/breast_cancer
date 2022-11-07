@@ -1,4 +1,4 @@
-,age,menopause_categorical,tumor-size,inv-nodes,node-caps_categorical,deg-malig_categorical,breast_boolean,breast-quad,irradiat_boolean,target
+,age_categorical,menopause_categorical,tumor-size,inv-nodes,node-caps_categorical,deg-malig_categorical,breast_boolean,breast-quad_categorical,irradiat_boolean,target
 0,2,2,2,0,2,3,1,3,0,1
 1,3,0,2,0,1,1,1,1,0,0
 2,3,0,6,0,1,2,0,2,0,1
