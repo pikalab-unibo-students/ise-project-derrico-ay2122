@@ -191,7 +191,7 @@ if __name__ == '__main__':
                                                (input_vars, input_values[0]), (output_vars, output_values))
         explanations.append(len_expl)
         computational_times.append(time)
-        print("Sum: ", np.sum(computational_times))
+        print("Elapsed Time: ", np.sum(computational_times))
 
     print_estimates(explanations, "Explanation")
     print_estimates(computational_times, "Computational time")
