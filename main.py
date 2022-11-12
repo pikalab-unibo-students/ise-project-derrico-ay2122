@@ -82,19 +82,12 @@ def get_datas(datas):
 
 def create_unique_df(datas):
     df = pd.DataFrame()
-    #times = 0
+
     for couple in datas:
-        #if times % 50 == 0:
         row = get_datas(couple)
         df = df.append(row)
-        #times = 0
-
-        #times += 1
 
     df.reset_index()
-
-    print(df.head())
-    print(len(df))
 
     return df
 
@@ -132,10 +125,9 @@ def get_MNIST_datas():
 
 def import_dataframe(df_name):
     df = None
-    #get_MNIST_datas()
 
     if df_name == "mnist":
-        df = pd.read_csv(".\datasets_files\\MNIST_datas.csv")#.iloc[:100, :]
+        df = pd.read_csv(".\datasets_files\\MNIST_datas.csv").iloc[:100, :]
     else:
         df = pd.read_csv(".\datasets_files\\" + df_name, index_col=[0], sep=',', na_values=[''])
 
