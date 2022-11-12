@@ -1,11 +1,12 @@
 import math
 import os
 import sys
+
 import cplex
 import numpy as np
 from pysat.examples.hitman import Hitman
 
-from encoding_utils_functions import generate_variables, get_variables_names, separate_vars, get_max
+from encoding_utils_functions import generate_variables, get_support_variables_names, separate_vars, get_max
 
 
 def define_number_of_outputs(model):
@@ -179,7 +180,6 @@ def define_formula_CPLEX(categorical_ids, A, b):
             pb.variables.add(names=integers, lb=[0] * len(integers), ub=max_values, types=["I"] * len(integers))
             pb.variables.add(names=real, types=["C"] * len(real))
             pb.variables.add(names=boolean, types=["B"] * len(boolean))
-            #pb.variables.add(names=not_cat, types=)
 
         for i in range(len(A[n_of_layer])):
             weights = A[n_of_layer][i].tolist()
@@ -190,7 +190,7 @@ def define_formula_CPLEX(categorical_ids, A, b):
 
             rhs = -1 * b[n_of_layer][i]
 
-            support_variables = get_variables_names(w_id, n_of_layer)
+            support_variables = get_support_variables_names(w_id, n_of_layer)
 
             if not support_variables[0] in all_variables_added:
                 sup_vars_n = len(support_variables)
@@ -242,7 +242,7 @@ def delete_hypos_and_output_constraint(pb):
 def generate_matrix(sample):
     sz = int(math.sqrt(len(sample)))
     # original image
-    pixels2 = []  # this will contain an array of m
+    pixels2 = []
     for i in range(sz):
         row1, row2 = [], []
         for j, v in enumerate(sample[(i * sz):(i + 1) * sz]):
@@ -254,7 +254,7 @@ def generate_matrix(sample):
     return np.array(pixels2)
 
 
-def clockwise_sorted(a, key=None, reverse=False):
+def clockwise_sort(a, key=None, reverse=False):
     nr, nc = a.shape
     res = a.tolist()
     sa = a.ravel().tolist()
@@ -293,33 +293,38 @@ def clockwise_sorted(a, key=None, reverse=False):
     return np.array([k for j in res for k in j])
 
 
-def sort_hypos(hypos):
+def clockwise_sort_hypos(hypos):
 
-    orientation = clockwise_sorted(generate_matrix([i for i in range(len(hypos))]))
-    print("Order: ", orientation)
+    orientation = clockwise_sort(generate_matrix([i for i in range(len(hypos))]))
+
     for i in range(len(hypos)):
         hypos[i] = list(hypos[i])
         hypos[i][4] = orientation[i]
         hypos[i] = tuple(hypos[i])
 
     hypos.sort(key=lambda x: x[4])
-    #print(hypos)
 
     return hypos
 
+def black_and_white_hypos_sorting(hypos):
+    white = [h[4] for h in hypos if h[2][0] == 1]
+    hypos_indexes = [h[4] for h in hypos]
+    black = set(hypos_indexes).difference(set(white))
+
+    sorted_ids = list(black) + list(white)
+    hs = [hypos[sorted_ids[i]] for i in range(len(sorted_ids))]
+
+    return hs
 
 def compute_minimal_CPLEX(oracle, hypos):
         rhypos = []
-        #hypos = sort_hypos(hypos.copy())
 
         # simple deletion-based linear search
         for i, hypo in enumerate(hypos):
-            #print("Hypo number: ", i)
             oracle.linear_constraints.delete(hypo[0])
 
             oracle.solve()
             if oracle.solution.is_primal_feasible():
-                #print([oracle.solution.get_values(v) for v in oracle.variables.get_names()])
                 # this hypothesis is needed
                 # adding it back to the list
                 oracle.linear_constraints.add(lin_expr=hypo[1], senses=hypo[3], rhs=hypo[2], names=[hypo[0]])
@@ -331,7 +336,6 @@ def compute_minimal_CPLEX(oracle, hypos):
 def smallest_expl_CPLEX(oracle, hypos):
 
     def add_hypos(set):
-        #print("SET: ", set)
         for h in set:
             oracle.linear_constraints.add(lin_expr=hypos[h][1], senses=hypos[h][3],
                                           rhs=hypos[h][2], names=[hypos[h][0]])
@@ -349,7 +353,6 @@ def smallest_expl_CPLEX(oracle, hypos):
              oracle.solve()
 
              if oracle.solution.is_primal_feasible():
-                 #print("ipo: ", hypo)
                  hitman.hit([i])
 
              reset_hypos()
@@ -369,7 +372,6 @@ def smallest_expl_CPLEX(oracle, hypos):
             print('cand: ', hset)
 
             add_hypos(hset)
-            print(oracle.linear_constraints.get_names())
             oracle.solve()
 
             if oracle.solution.is_primal_feasible():
@@ -379,7 +381,6 @@ def smallest_expl_CPLEX(oracle, hypos):
 
                 #free vars are not fixed vars: C \ h
                 free_variables = list(set(range(len(hypos))).difference(set(hset)))
-                #print("Free vars: ", free_variables)
 
                 model = oracle.solution
 
@@ -394,7 +395,6 @@ def smallest_expl_CPLEX(oracle, hypos):
                         true_val = int(model.get_values(var))
                         add = exp != true_val
 
-                    #print("Is falsified? ", add)
                     if add:
                         falsified.append(h)
                     else:
@@ -410,18 +410,15 @@ def smallest_expl_CPLEX(oracle, hypos):
                     oracle.solve()
 
                     if oracle.solution.is_primal_feasible():
-                        #print("not to hit: ", u)
                         hset.append(u)
                     else:
-                        #print("to hit: ", u)
                         to_hit.append(u)
 
                     reset_hypos()
 
-                #print("coex: ", to_hit)
                 hitman.hit(to_hit)
             else:
-                print("return ", hset)
+                print("result: ", hset)
                 return hset
 
 def minimal_expl_CPLEX(oracle, hypos):
@@ -429,14 +426,10 @@ def minimal_expl_CPLEX(oracle, hypos):
     oracle.solve()
     if oracle.solution.is_primal_feasible():
         print('no implication!')
-        #model = pb.solution
-        #print('coex  sample:', [self.coex_model.get_values(i) for i in self.inputs])
-        #print('coex  rounded:', [round(self.coex_model.get_values(i)) for i in self.inputs])
-        #print('coex classes:', [self.coex_model.get_values(o) for o in self.outputs])
-        #print('wrong sample:', [model.get_values(i) for i in self.inputs])
-        #print('wrong rounded:', [round(model.get_values(i)) for i in self.inputs])
-        #print('wrong classes:', [model.get_values(o) for o in self.outputs])
-
+        values = oracle.solution.get_values()
+        names = oracle.variables.get_names()
+        for i in range(len(names)):
+            print("{0}: {1}".format(names[i], values[i]))
         sys.exit(1)
 
     rhypos = compute_minimal_CPLEX(oracle, hypos)
