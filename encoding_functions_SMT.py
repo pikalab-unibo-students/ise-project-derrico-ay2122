@@ -5,7 +5,7 @@ from pysmt.shortcuts import Symbol, Implies, Iff, TRUE, LE, Real, FALSE, GE, And
     Or, Plus, Not, ExactlyOne
 from pysmt.typing import REAL, INT, BOOL
 
-from encoding_utils_functions import generate_variables, get_variables_names, separate_vars, get_max
+from encoding_utils_functions import generate_variables, get_support_variables_names, separate_vars, get_max
 
 
 def SMT_indicator_constraints(y, s):
@@ -64,14 +64,20 @@ def define_formula_SMT(categorical_ids, A, b):
             all_vars.update(to_add)
             variables = list(to_add.values())
 
-            _, boolean, integers = separate_vars([v.symbol_name() for v in variables])
+            reals, boolean, integers = separate_vars([v.symbol_name() for v in variables])
             not_real = boolean + integers
             max_values = get_max(not_real)
 
             categorical_boundaries = [
                 ExactlyOne([Equals(all_vars[not_real[i]], Real(k)) for k in range(0, max_values[i] + 1)])
                                                                    for i in range(len(max_values))]
-            solver.add_assertions(categorical_boundaries)
+
+            real_boundaries = [And(
+                GE(all_vars[reals[i]], Real(sys.maxsize * -1)),
+                LE(all_vars[reals[i]], Real(sys.maxsize))
+                 ) for i in range(len(reals))]
+
+            solver.add_assertions(categorical_boundaries + real_boundaries)
         else:
             variables = [v[1] for v in all_vars.items() if v[0] in variables_names]
 
@@ -93,7 +99,7 @@ def define_formula_SMT(categorical_ids, A, b):
 
             formula = Plus(formula_terms)
 
-            support_variables = get_variables_names(id_output, n_of_layer)
+            support_variables = get_support_variables_names(id_output, n_of_layer)
             y = Symbol(support_variables[0], REAL)
             all_vars[support_variables[0]] = y
 
@@ -180,7 +186,6 @@ def smallest_expl_SMT(oracle, hypos):
         for i, hypo in enumerate(hypos):
 
             if oracle.solve(hypos[:i] + hypos[(i + 1):]):
-                print("ipo: ", hypo)
                 hitman.hit([i])
 
         iters = 0
@@ -202,67 +207,49 @@ def smallest_expl_SMT(oracle, hypos):
 
                 #free vars are not fixed vars: C \ h
                 free_variables = list(set(range(len(hypos))).difference(set(hset)))
-                print("Free vars: ", free_variables)
 
                 model = oracle.get_model()
 
                 for h in free_variables:
                     hypo = hypos[h]
                     (var, var_name), exp = get_var_name_and_value(hypo)
-                    print("Var: ", var)
-                    print("Value: ", exp)
 
                     if "_C" in var_name:
                         true_val = float(model.get_py_value(var))
-                        print("True value UP: ", true_val)
                         add = not (exp - 0.001 <= true_val <= exp + 0.001)
                     else:
                         true_val = int(model.get_py_value(var))
-                        print("True value DOWN: ", true_val)
                         add = exp != true_val
 
-                    print("Is falsified? ", add)
                     if add:
                         falsified.append(h)
                     else:
                         hset.append(h)
 
                 #falsified + satisfied = C \ h
-                print("Unsatisfied: ", falsified)
-                print("hset: ", satisfied)
 
                 for u in falsified:
-                    print("hset now: ", hset)
-                    print("u: ", u)
-                    #to_add = [u] + hset
-                    #print("To add: ", to_add)
 
                     if oracle.solve([hypos[i] for i in hset] + [hypos[h]]):
                         hset.append(u)
                     else:
                         to_hit.append(u)
 
-                print("coex: ", to_hit)
                 hitman.hit(to_hit)
             else:
-                print("return ", hset)
                 return hset
 
 def compute_minimal_SMT(solver, hypos):
 
     rhypos = hypos.copy()
-
     i = 0
 
     while i < len(rhypos):
-
         to_test = rhypos[:i] + rhypos[(i + 1):]
 
         if solver.solve(to_test):
-            print("solution find")
             i += 1
         else:
-            print("solution not find")
             rhypos = to_test
 
     return rhypos
