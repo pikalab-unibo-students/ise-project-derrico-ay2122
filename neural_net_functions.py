@@ -24,7 +24,7 @@ def mnist_preprocessing(df):
             diff_1 = max_value - v
             df.iloc[j, i] = 0 if diff_1 > int(max_value / 2) else 1
 
-    categorical_ids = [v for v in range(len(df.columns))]
+    categorical_ids = [[v, 0, 1] for v in range(len(df.columns))]
     print_categorical_indexes(categorical_ids, "mnist")
 
     df['target'] = target
@@ -50,12 +50,11 @@ def dataset_preprocessing(df, df_name=None):
                 categorical_names[feature] = le.classes_
                 df_new.loc[:, feature] = le.transform(df.loc[:, feature])
 
-            #temp = pd.get_dummies(df_new.loc[:, categorical_features], columns=categorical_features)
-            #df_new = df_new.loc[:, [v for v in df.columns if v not in categorical_features]].join(temp)
-
         # target as categorical
         le_target = LabelEncoder()
         df_new.loc[:, "target"] = le_target.fit_transform(df.loc[:, "target"])
+
+        there_are_boolean = False
 
         for column in df.columns.values:
             if "_boolean" in column:
@@ -86,7 +85,6 @@ def create_datasets(df):
 
     columns = [c for c in df.columns if c != 'target']
     x, y = df.loc[:, columns], df.loc[:, 'target']
-    print("Colonne: ", x.columns)
     x = StandardScaler().fit_transform(x)
 
     return x, y
@@ -124,8 +122,6 @@ def get_model(params):
         Dense(classes_number, name="secondlayer", activation='softmax')
     ])
 
-    #model_compiling(model)
-
     return model
 
 
@@ -153,7 +149,7 @@ def cross_fold(inputs, targets, model):
         print('------------------------------------------------------------------------')
         print(f'Training for fold {fold_no} ...')
 
-        crossed_model.fit(inputs[train], targets[train], batch_size=4, epochs=180, shuffle=True, callbacks=[early_stop])
+        crossed_model.fit(inputs[train], targets[train], batch_size=100, epochs=15, shuffle=True, callbacks=[early_stop])
 
         # Generate generalization metrics
         scores = crossed_model.evaluate(inputs[test], targets[test], verbose=0)
@@ -174,23 +170,8 @@ def fit_model(df, parameters, df_name):
     x, y = create_datasets(df)
 
     model = get_model(parameters)
-    #cross_fold(x, y, model)
     model_compiling(model)
-    model.fit(x, y, batch_size=4, epochs=10, shuffle=True)
-
-    # x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.20, stratify=y)
-    #
-    # model.fit(x_train, y_train, batch_size=4, epochs=50, shuffle=True)
-    #
-    # y_pred = model.predict(x_test)
-    # y_pred = y_pred.argmax(axis=-1)
-    #
-    # print('Accuratezza:', accuracy_score(y_test, y_pred) * 100, '%')
-    #
-    # plt.figure(figsize=(16, 16))
-    # cm = confusion_matrix(y_test, y_pred)
-    # f = sns.heatmap(cm, annot=True)
-    # plt.show()
+    model.fit(x, y, batch_size=100, epochs=2, shuffle=True)
 
     return model
 
