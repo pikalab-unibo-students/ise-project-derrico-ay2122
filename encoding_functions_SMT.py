@@ -72,12 +72,7 @@ def define_formula_SMT(categorical_ids, A, b):
                 ExactlyOne([Equals(all_vars[not_real[i]], Real(k)) for k in range(0, max_values[i] + 1)])
                                                                    for i in range(len(max_values))]
 
-            real_boundaries = [And(
-                GE(all_vars[reals[i]], Real(sys.maxsize * -1)),
-                LE(all_vars[reals[i]], Real(sys.maxsize))
-                 ) for i in range(len(reals))]
-
-            solver.add_assertions(categorical_boundaries + real_boundaries)
+            solver.add_assertions(categorical_boundaries)
         else:
             variables = [v[1] for v in all_vars.items() if v[0] in variables_names]
 
