@@ -1,8 +1,8 @@
-import ctypes.wintypes
+#!/usr/bin/env python3
+
 import getopt
 import os
 
-from encoding_functions_SMT import print_solver_assertion, cancel_file
 from explain import encoding_model, explaining_procedures
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
