@@ -123,13 +123,13 @@ def get_MNIST_datas():
     plt.tight_layout()
     plt.show()
 
-def import_dataframe(df_name):
+def import_dataframe(df_name, sep):
     df = None
 
     if df_name == "mnist":
-        df = pd.read_csv(".\datasets_files\\MNIST_datas.csv").iloc[:100, :]
+        df = pd.read_csv("." + sep + "datasets_files" + sep + "MNIST_datas.csv").iloc[:100, :]
     else:
-        df = pd.read_csv(".\datasets_files\\" + df_name, index_col=[0], sep=',', na_values=[''])
+        df = pd.read_csv("." + sep + "datasets_files" + sep + df_name, index_col=[0], sep=',', na_values=[''])
 
     return df
 
@@ -147,15 +147,15 @@ if __name__ == '__main__':
 
     hidden_nodes, df_name, expl_type, solver_name = parse_options()
 
-    df = import_dataframe(df_name)
+    sep = os.sep
+
+    df = import_dataframe(df_name, sep)
     df = dataset_preprocessing(df, df_name)
 
     explanations = []
     computational_times = []
 
-    sep = os.sep
     model_path = "." + sep + "models" + sep + df_name + "_hidden_" + str(hidden_nodes)
-    print(model_path)
 
     if os.path.isdir(model_path):
         model = keras.models.load_model(model_path)
