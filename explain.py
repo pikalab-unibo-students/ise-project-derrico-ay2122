@@ -52,8 +52,6 @@ def explaining_procedures(pb, expl_type, solver_name, pattern_number, df_name, i
         expl = [v[0] for v in explanation]
         save_images(input_values, expl, pattern_number)
 
-    print(len(explanation))
-
     return len(explanation), end_time
 
 
