@@ -8,13 +8,12 @@ import numpy as np
 import pandas as pd
 
 from explaining.explain import encoding_model, explaining_procedures
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from tensorflow import keras
 from keras.datasets import mnist
 
 from neural_functions.neural_net_functions import build_model, dataset_preprocessing
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
 
 def parse_options():
     """
