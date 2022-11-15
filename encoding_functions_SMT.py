@@ -147,9 +147,9 @@ def freeze_output_SMT(solver, output_vars, output_value):
 
 def minimal_expl_SMT(solver, hypos):
 
-    fname = "encoded_with_smt_solver"
-    cancel_file(fname)
-    print_solver_assertion(fname, solver)
+    # fname = "encoded_with_smt_solver"
+    # cancel_file(fname)
+    # print_solver_assertion(fname, solver)
 
     if solver.solve(hypos):
         print('no implication!')
