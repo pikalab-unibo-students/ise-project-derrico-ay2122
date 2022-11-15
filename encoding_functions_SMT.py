@@ -1,9 +1,9 @@
 import sys
 
 from pysat.examples.hitman import Hitman
-from pysmt.shortcuts import Symbol, Implies, Iff, TRUE, LE, Real, FALSE, GE, And, Solver, Equals, Minus, Times, Int, GT, \
-    Or, Plus, Not, ExactlyOne
-from pysmt.typing import REAL, INT, BOOL
+from pysmt.shortcuts import Symbol, Implies, LE, Real, GE, And, Solver, Equals, Minus, Times, Int, GT, \
+    Plus, ExactlyOne
+from pysmt.typing import REAL, INT
 
 from encoding_utils_functions import generate_variables, get_support_variables_names, separate_vars, get_max
 
@@ -13,13 +13,9 @@ def SMT_indicator_constraints(y, s):
 
     z = Symbol(name, INT)
 
-    constraint = []
-    constraint.append(Implies(Equals(z, Int(1)), LE(y, Real(0))))
-    constraint.append(Implies(Equals(z, Int(0)), LE(s, Real(0))))
-    constraint.append(ExactlyOne(Equals(z, Int(0)), Equals(z, Int(1))))
-
-    constraint.append(GE(y, Real(0)))
-    constraint.append(GE(s, Real(0)))
+    constraint = [Implies(Equals(z, Int(1)), LE(y, Real(0))),
+                  Implies(Equals(z, Int(0)), LE(s, Real(0))),
+                  ExactlyOne(Equals(z, Int(0)), Equals(z, Int(1))), GE(y, Real(0)), GE(s, Real(0))]
 
     return constraint
 
@@ -53,6 +49,7 @@ def define_formula_SMT(categorical_ids, A, b):
     formula_terms = []
     solver = Solver(name="z3")
     all_vars = {}
+    inputs = []
 
     for n_of_layer in range(n_of_layers):
 
@@ -69,8 +66,8 @@ def define_formula_SMT(categorical_ids, A, b):
             max_values = get_max(not_real)
 
             categorical_boundaries = [
-                ExactlyOne([Equals(all_vars[not_real[i]], Real(k)) for k in range(0, max_values[i] + 1)])
-                                                                   for i in range(len(max_values))]
+                ExactlyOne([Equals(all_vars[not_real[i]], Real(k))
+                            for k in range(0, max_values[i] + 1)]) for i in range(len(max_values))]
 
             solver.add_assertions(categorical_boundaries)
         else:
@@ -159,17 +156,16 @@ def minimal_expl_SMT(solver, hypos):
         print(solver.get_model())
         sys.exit(1)
 
-    rhypos = compute_minimal_SMT(solver, hypos)
+    return compute_minimal_SMT(solver, hypos)
 
-    return rhypos
 
 def smallest_expl_SMT(oracle, hypos):
 
-    def get_var_name_and_value(h):
-        var_name, value_in_string = ''.join([c for c in h.__str__() if c not in ['(', ')']]).replace(" ", "").split("=")
-        var = Symbol(var_name, REAL)
+    def get_var_name_and_value(variable):
+        variable_name, value_in_string = ''.join([c for c in variable.__str__() if c not in ['(', ')']]).replace(" ", "").split("=")
+        symbol = Symbol(variable_name, REAL)
         value = float(value_in_string)
-        return (var, var_name), value
+        return (symbol, variable_name), value
 
     fname = "encoded_with_smt_solver"
     cancel_file(fname)
@@ -185,8 +181,6 @@ def smallest_expl_SMT(oracle, hypos):
 
         iters = 0
 
-        i = 0
-
         while True:
             hset = hitman.get()
 
@@ -200,7 +194,7 @@ def smallest_expl_SMT(oracle, hypos):
                 to_hit = []
                 satisfied, falsified = [], []
 
-                #free vars are not fixed vars: C \ h
+                # free vars are not fixed vars: C \ h
                 free_variables = list(set(range(len(hypos))).difference(set(hset)))
 
                 model = oracle.get_model()
@@ -221,7 +215,7 @@ def smallest_expl_SMT(oracle, hypos):
                     else:
                         hset.append(h)
 
-                #falsified + satisfied = C \ h
+                # falsified + satisfied = C \ h
 
                 for u in falsified:
 
@@ -233,6 +227,7 @@ def smallest_expl_SMT(oracle, hypos):
                 hitman.hit(to_hit)
             else:
                 return hset
+
 
 def compute_minimal_SMT(solver, hypos):
 

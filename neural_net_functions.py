@@ -1,5 +1,6 @@
+import os
+
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
 import tensorflow as tf
 import tensorflow_docs.plots as plots
@@ -76,7 +77,8 @@ def dataset_preprocessing(df, df_name=None):
 
 
 def print_categorical_indexes(attrs, df_name):
-    with open(".\datasets_categorical_index\\" + df_name + "\\" + df_name + '_categorical_indexes.txt', 'w') as f:
+    path_sep = os.sep
+    with open("." + path_sep + "datasets_categorical_index" + path_sep + df_name + path_sep + df_name + '_categorical_indexes.txt', 'w') as f:
         for v in attrs:
             f.write(str(int(v[0])) + "_" + str(int(v[1])) + "_" + str(int(v[2])) + "\n")
 
@@ -165,7 +167,7 @@ def cross_fold(inputs, targets, model):
     print("Average loss: ", np.mean(loss_per_fold))
 
 
-def fit_model(df, parameters, df_name):
+def fit_model(df, parameters):
 
     x, y = create_datasets(df)
 
@@ -177,11 +179,11 @@ def fit_model(df, parameters, df_name):
 
 
 #Procedura di creazione del modello
-def build_model(df, hidden_layer_nodes, df_name):
+def build_model(df, hidden_layer_nodes):
 
     input_shape = len(df.columns) - 1
     classes = len(df['target'].unique())
 
-    model = fit_model(df, (input_shape, hidden_layer_nodes, classes), df_name)
+    model = fit_model(df, (input_shape, hidden_layer_nodes, classes))
 
     return model

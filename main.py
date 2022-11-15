@@ -2,18 +2,19 @@
 
 import getopt
 import os
-
-from explain import encoding_model, explaining_procedures
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import sys
 
 import numpy as np
 import pandas as pd
+
+from explain import encoding_model, explaining_procedures
 from tensorflow import keras
 from keras.datasets import mnist
 
 from neural_net_functions import build_model, dataset_preprocessing
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 
 def parse_options():
     """
@@ -34,18 +35,18 @@ def parse_options():
         usage()
         sys.exit(1)
 
-    hidden_nodes = 20
-    df_name = None
-    expl = "minimal"
+    number_of_nodes_in_hidden_layer = 20
+    dataframe_name = None
+    explanation_type = "minimal"
     solver = "cplex"
 
     for opt, arg in opts:
         if opt in ('-n', '--hidden_node'):
-            hidden_nodes = int(arg)
+            number_of_nodes_in_hidden_layer = int(arg)
         elif opt in ('-d', '--dataframe'):
-            df_name = str(arg)
+            dataframe_name = str(arg)
         elif opt in ('-e', '--explanation'):
-            expl = str(arg)
+            explanation_type = str(arg)
         elif opt in ('-s', '--solver'):
             solver = str(arg)
         elif opt in ('-h', '--help'):
@@ -54,7 +55,7 @@ def parse_options():
         else:
             assert False, 'Unhandled option: {0} {1}'.format(opt, arg)
 
-    return hidden_nodes, df_name, expl, solver
+    return number_of_nodes_in_hidden_layer, dataframe_name, explanation_type, solver
 
 
 def usage():
@@ -73,23 +74,26 @@ def usage():
     print('                                 Available values: [cplex, smt] (default: cplex)')
     print('        -h, --help')
 
+
 def get_datas(datas):
     data = np.hstack(datas[0])
-    df = pd.DataFrame(data, index=["p" + str(i) for i in range(len(data))]).transpose()
-    df['target'] = datas[1]
+    dataframe = pd.DataFrame(data, index=["p" + str(i) for i in range(len(data))]).transpose()
+    dataframe['target'] = datas[1]
 
-    return df
+    return dataframe
+
 
 def create_unique_df(datas):
-    df = pd.DataFrame()
+    dataframe = pd.DataFrame()
 
     for couple in datas:
         row = get_datas(couple)
-        df = df.append(row)
+        dataframe = dataframe.append(row)
 
-    df.reset_index()
+    dataframe.reset_index()
 
-    return df
+    return dataframe
+
 
 def get_MNIST_datas():
     (train_X, train_y), (test_X, test_y) = mnist.load_data()
@@ -102,9 +106,11 @@ def get_MNIST_datas():
         if value == 3 or value == 8:
             to_add.append((X[i], value))
 
-    df = create_unique_df(to_add)
+    dataframe = create_unique_df(to_add)
 
-    df.to_csv(".\datasets_files\\MNIST_datas.csv", index=False)
+    path_sep = os.sep
+
+    dataframe.to_csv("." + path_sep + "datasets_files" + path_sep + "MNIST_datas.csv", index=False)
 
     from matplotlib import pyplot as plt
 
@@ -123,44 +129,48 @@ def get_MNIST_datas():
     plt.tight_layout()
     plt.show()
 
-def import_dataframe(df_name, sep):
-    df = None
 
-    if df_name == "mnist":
-        df = pd.read_csv("." + sep + "datasets_files" + sep + "MNIST_datas.csv").iloc[:100, :]
+def import_dataframe(dataframe_name):
+
+    sep = os.sep
+
+    if dataframe_name == "mnist":
+        dataframe = pd.read_csv("." + sep + "datasets_files" + sep + "MNIST_datas.csv").iloc[:100, :]
     else:
-        df = pd.read_csv("." + sep + "datasets_files" + sep + df_name, index_col=[0], sep=',', na_values=[''])
+        dataframe = pd.read_csv("." + sep + "datasets_files" + sep + dataframe_name, index_col=[0], sep=',', na_values=[''])
 
-    return df
+    return dataframe
 
-def print_vars(vars):
-    for v in vars:
+
+def print_vars(variables):
+    for v in variables:
         print(v.df_name + ": " + str(v.varValue))
+
 
 def print_estimates(values, measure):
     print("Avg ", measure, " size: ", np.average(values))
     print("Min ", measure, " size: ", np.min(values))
     print("Max ", measure, " size: ", np.max(values))
 
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
     hidden_nodes, df_name, expl_type, solver_name = parse_options()
 
-    sep = os.sep
-
-    df = import_dataframe(df_name, sep)
+    df = import_dataframe(df_name)
     df = dataset_preprocessing(df, df_name)
 
     explanations = []
     computational_times = []
 
-    model_path = "." + sep + "models" + sep + df_name + "_hidden_" + str(hidden_nodes)
+    path_separator = os.sep
+    model_path = "." + path_separator + "models" + path_separator + df_name + "_hidden_" + str(hidden_nodes)
 
     if os.path.isdir(model_path):
         model = keras.models.load_model(model_path)
     else:
-        model = build_model(df, hidden_nodes, df_name)
+        model = build_model(df, hidden_nodes)
         model.save(model_path)
 
     encoded_model, input_vars = encoding_model(model, df_name, solver_name)

@@ -12,8 +12,8 @@ from encoding_utils_functions import generate_variables, get_support_variables_n
 def define_number_of_outputs(model):
     inpt = []
 
-    for l in ["firstlayer", "secondlayer"]:
-        inpt.append(model.get_layer(l).input_shape[1])
+    for layer_name in ["firstlayer", "secondlayer"]:
+        inpt.append(model.get_layer(layer_name).input_shape[1])
 
     return inpt
 
@@ -44,7 +44,8 @@ def get_weights_and_bias(model, n_layers):
 
 
 def read_categorical_indexes(df_name):
-    path = ".\datasets_categorical_index\\" + df_name + "\\" + df_name + "_categorical_indexes.txt"
+    sep = os.sep
+    path = "." + sep + "datasets_categorical_index" + sep + df_name + sep + df_name + "_categorical_indexes.txt"
 
     ids = []
     if os.path.exists(path):
@@ -66,6 +67,7 @@ def set_indicator_constraint(formula, support_variables):
     first = True
     for i in idx:
         flag = 0 if first else 1; first = False
+
         formula.indicator_constraints.add(indvar=z_var,
                                           lin_expr=[[i], [1]],
                                           sense="L",
@@ -76,10 +78,10 @@ def set_indicator_constraint(formula, support_variables):
 
 
 def get_vars(formula, name):
-    vars = [v for v in formula.variables.get_names() if name[0] in v] if len(name) == 1 \
+    formula_variables = [v for v in formula.variables.get_names() if name[0] in v] if len(name) == 1 \
         else [v for v in formula.variables.get_names() if name[0] in v and name[1] in v]
 
-    return vars
+    return formula_variables
 
 
 def drop_elements_from_list(initial, to_remove):
@@ -105,20 +107,20 @@ def freeze_input_CPLEX(pb, input_vars, input_value):
 
     hypos = []
 
-    for id in range(len(input_vars)):
-        var = input_vars[id]
-        val = input_value[id]
+    for id_variable in range(len(input_vars)):
+        var = input_vars[id_variable]
+        val = input_value[id_variable]
 
         eql, rhs = [[var], [1]], [float(val)]
 
-        cnames = ['hypo_{0}'.format(id)]
+        cnames = ['hypo_{0}'.format(id_variable)]
         senses = ['E']
         constr = [eql]
 
         pb.linear_constraints.add(lin_expr=constr, senses=senses, rhs=rhs, names=cnames)
 
         # adding a constraint to the list of hypotheses
-        hypos.append(tuple([cnames[0], constr, rhs, senses, id]))
+        hypos.append(tuple([cnames[0], constr, rhs, senses, id_variable]))
 
     return hypos
 
@@ -164,11 +166,13 @@ def define_formula_CPLEX(categorical_ids, A, b):
     pb.set_results_stream(None)
 
     all_variables_added = []
+    inputs = []
     for n_of_layer in range(n_of_layers):
         w_id = 0
 
         number_of_vars = len(A[n_of_layer][0])
         variables = generate_variables(n_of_layer, categorical_ids, number_of_vars)
+
         if n_of_layer == 0:
             inputs = variables.copy()
 
@@ -194,7 +198,7 @@ def define_formula_CPLEX(categorical_ids, A, b):
 
             if not support_variables[0] in all_variables_added:
                 sup_vars_n = len(support_variables)
-                print(support_variables)
+
                 if n_of_layer + 1 < 2:
                     pb.variables.add(names=support_variables, lb=[0] * sup_vars_n, types=["C"] * sup_vars_n)
                 else:
@@ -265,7 +269,7 @@ def clockwise_sort(a, key=None, reverse=False):
     res[0] = sa[:nc]
     cur, lenr, lenc = nc, nr - 1, nc - 1
     x, y = 0, nc - 1
-    while (lenc > 0 and lenr > 0):
+    while lenc > 0 and lenr > 0:
         # go down, then go left
         for _ in range(lenr):
             x += 1
@@ -306,6 +310,7 @@ def clockwise_sort_hypos(hypos):
 
     return hypos
 
+
 def black_and_white_hypos_sorting(hypos):
     white = [h[4] for h in hypos if h[2][0] == 1]
     hypos_indexes = [h[4] for h in hypos]
@@ -316,52 +321,52 @@ def black_and_white_hypos_sorting(hypos):
 
     return hs
 
+
 def compute_minimal_CPLEX(oracle, hypos):
-        rhypos = []
+    rhypos = []
 
-        # simple deletion-based linear search
-        for i, hypo in enumerate(hypos):
-            oracle.linear_constraints.delete(hypo[0])
+    # simple deletion-based linear search
+    for i, hypo in enumerate(hypos):
+        oracle.linear_constraints.delete(hypo[0])
 
-            oracle.solve()
-            if oracle.solution.is_primal_feasible():
-                # this hypothesis is needed
-                # adding it back to the list
-                oracle.linear_constraints.add(lin_expr=hypo[1], senses=hypo[3], rhs=hypo[2], names=[hypo[0]])
+        oracle.solve()
+        if oracle.solution.is_primal_feasible():
+            # this hypothesis is needed
+            # adding it back to the list
+            oracle.linear_constraints.add(lin_expr=hypo[1], senses=hypo[3], rhs=hypo[2], names=[hypo[0]])
 
-                rhypos.append(tuple([hypo[4], hypo[0]]))
+            rhypos.append(tuple([hypo[4], hypo[0]]))
 
-        return rhypos
+    return rhypos
+
 
 def smallest_expl_CPLEX(oracle, hypos):
 
-    def add_hypos(set):
-        for h in set:
-            oracle.linear_constraints.add(lin_expr=hypos[h][1], senses=hypos[h][3],
-                                          rhs=hypos[h][2], names=[hypos[h][0]])
+    def add_hypos(hypos_set):
+        for hypothesis in hypos_set:
+            oracle.linear_constraints.add(lin_expr=hypos[hypothesis][1], senses=hypos[hypothesis][3],
+                                          rhs=hypos[hypothesis][2], names=[hypos[hypothesis][0]])
+
     def reset_hypos():
-        for h in hypos:
-            if h[0] in oracle.linear_constraints.get_names():
-                oracle.linear_constraints.delete(h[0])
+        for hypothesis in hypos:
+            if hypothesis[0] in oracle.linear_constraints.get_names():
+                oracle.linear_constraints.delete(hypothesis[0])
 
     with Hitman(bootstrap_with=[[i for i in range(len(hypos))]]) as hitman:
 
         # computing unit-size MCSes
         for i, hypo in enumerate(hypos):
+            oracle.linear_constraints.delete(hypo[0])
+            oracle.solve()
 
-             oracle.linear_constraints.delete(hypo[0])
-             oracle.solve()
+            if oracle.solution.is_primal_feasible():
+                hitman.hit([i])
 
-             if oracle.solution.is_primal_feasible():
-                 hitman.hit([i])
-
-             reset_hypos()
-             add_hypos([i for i in range(len(hypos))])
+            reset_hypos()
+            add_hypos([i for i in range(len(hypos))])
 
         iters = 0
         reset_hypos()
-
-        i = 0
 
         while True:
             hset = hitman.get()
@@ -379,7 +384,7 @@ def smallest_expl_CPLEX(oracle, hypos):
                 to_hit = []
                 satisfied, falsified = [], []
 
-                #free vars are not fixed vars: C \ h
+                # free vars are not fixed vars: C \ h
                 free_variables = list(set(range(len(hypos))).difference(set(hset)))
 
                 model = oracle.solution
@@ -400,7 +405,7 @@ def smallest_expl_CPLEX(oracle, hypos):
                     else:
                         hset.append(h)
 
-                #falsified + satisfied = C \ h
+                # falsified + satisfied = C \ h
 
                 reset_hypos()
                 for u in falsified:
@@ -421,6 +426,7 @@ def smallest_expl_CPLEX(oracle, hypos):
                 print("result: ", hset)
                 return hset
 
+
 def minimal_expl_CPLEX(oracle, hypos):
 
     oracle.solve()
@@ -432,9 +438,4 @@ def minimal_expl_CPLEX(oracle, hypos):
             print("{0}: {1}".format(names[i], values[i]))
         sys.exit(1)
 
-    rhypos = compute_minimal_CPLEX(oracle, hypos)
-
-    expl_sz = len(rhypos)
-    print('  # hypos left:', expl_sz)
-
-    return rhypos
+    return compute_minimal_CPLEX(oracle, hypos)

@@ -52,7 +52,10 @@ def explaining_procedures(pb, expl_type, solver_name, pattern_number, df_name, i
         expl = [v[0] for v in explanation]
         save_images(input_values, expl, pattern_number)
 
-    return len(explanation), end_time
+    expl_sz = len(explanation)
+    print('  # hypos left:', expl_sz)
+
+    return expl_sz, end_time
 
 
 def save_images(sample, expl, pattern_id):
