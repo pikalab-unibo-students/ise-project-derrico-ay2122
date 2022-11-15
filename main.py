@@ -15,6 +15,7 @@ from keras.datasets import mnist
 
 from neural_functions.neural_net_functions import build_model, dataset_preprocessing
 
+
 def parse_options():
     """
         Parses command-line options:
