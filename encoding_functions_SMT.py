@@ -167,9 +167,9 @@ def smallest_expl_SMT(oracle, hypos):
         value = float(value_in_string)
         return (symbol, variable_name), value
 
-    fname = "encoded_with_smt_solver"
-    cancel_file(fname)
-    print_solver_assertion(fname, oracle)
+    # fname = "encoded_with_smt_solver"
+    # cancel_file(fname)
+    # print_solver_assertion(fname, oracle)
 
     with Hitman(bootstrap_with=[[i for i in range(len(hypos))]]) as hitman:
 
