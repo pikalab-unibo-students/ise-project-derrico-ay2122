@@ -147,8 +147,8 @@ def print_vars(variables):
 
 
 def print_estimates(values, measure):
-    print("Avg ", measure, " size: ", np.average(values))
     print("Min ", measure, " size: ", np.min(values))
+    print("Avg ", measure, " size: ", np.average(values))
     print("Max ", measure, " size: ", np.max(values))
 
 
