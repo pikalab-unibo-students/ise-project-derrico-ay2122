@@ -164,8 +164,13 @@ def smallest_expl_SMT(oracle, hypos):
     def get_var_name_and_value(variable):
         variable_name, value_in_string = ''.join([c for c in variable.__str__() if c not in ['(', ')']]).replace(" ", "").split("=")
         symbol = Symbol(variable_name, REAL)
-        division_terms = value_in_string.split("/")
-        value = float(division_terms[0]) / float(division_terms[1])
+
+        if "/" in value_in_string:
+            division_terms = value_in_string.split("/")
+            value = float(division_terms[0]) / float(division_terms[1])
+        else:
+            value = float(value_in_string)
+
         return (symbol, variable_name), value
 
     # fname = "encoded_with_smt_solver"
