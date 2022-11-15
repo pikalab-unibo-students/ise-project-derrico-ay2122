@@ -6,7 +6,7 @@ import cplex
 import numpy as np
 from pysat.examples.hitman import Hitman
 
-from encoding_utils_functions import generate_variables, get_support_variables_names, separate_vars, get_max
+from explaining.encoding_utils_functions import generate_variables, separate_vars, get_max, get_support_variables_names
 
 
 def define_number_of_outputs(model):

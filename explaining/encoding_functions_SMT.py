@@ -5,7 +5,7 @@ from pysmt.shortcuts import Symbol, Implies, LE, Real, GE, And, Solver, Equals, 
     Plus, ExactlyOne
 from pysmt.typing import REAL, INT
 
-from encoding_utils_functions import generate_variables, get_support_variables_names, separate_vars, get_max
+from explaining.encoding_utils_functions import generate_variables, separate_vars, get_max, get_support_variables_names
 
 
 def SMT_indicator_constraints(y, s):

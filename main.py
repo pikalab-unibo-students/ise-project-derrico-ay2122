@@ -7,11 +7,11 @@ import sys
 import numpy as np
 import pandas as pd
 
-from explain import encoding_model, explaining_procedures
+from explaining.explain import encoding_model, explaining_procedures
 from tensorflow import keras
 from keras.datasets import mnist
 
-from neural_net_functions import build_model, dataset_preprocessing
+from neural_functions.neural_net_functions import build_model, dataset_preprocessing
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
