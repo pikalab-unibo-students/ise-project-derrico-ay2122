@@ -42,7 +42,7 @@ A rigorous abduction-based explanation for the samples of a dataset can be compu
 $ main.py -n 𝑛𝑢𝑚𝑏𝑒𝑟_𝑜𝑓_𝑛𝑜𝑑𝑒 -d 𝑑𝑎𝑡𝑎𝑠𝑒𝑡_𝑛𝑎𝑚𝑒 -e 𝑡𝑦𝑝𝑒_𝑜𝑓_𝑒𝑥𝑝𝑙𝑎𝑛𝑎𝑡𝑖𝑜𝑛 -s 𝑡𝑦𝑝𝑒_𝑜𝑓_𝑠𝑜𝑙𝑣𝑒𝑟_𝑢𝑠𝑒𝑑
 ```
 
-It's possible to set a precise number of nodes for the hidden layer of NN model, that is going to be explained, using the parameter ```-n```: for the experiment, NN with only one hidden layer with i ∈ {10, 15, 20} neurons have been considered. Nothing forbids to set a different value: if not already present in the ***models*** path, the model is trained and saved in "models/***dataset_name***_***number_of_node***" folder, and then it becomes available for reproducing the experiment for a second time.
+It's possible to set a precise number of nodes for the hidden layer of NN model, that is going to be explained, using the parameter ```-n```: for the experiment, NNs with only one hidden layer with i ∈ {10, 15, 20} neurons have been considered. Nothing forbids to set a different value: if not already present in the ***models*** path, the model is trained and saved in "models/***dataset_name***_***number_of_node***" folder, and then it becomes available for reproducing the experiment for a second time.
 
 With the parameter ```-d``` a dataset, whose samples will be explained, is choosen.
 This is the list of considered datasets, from Penn & UCI repositories of benchmark dataset:
