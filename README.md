@@ -45,7 +45,7 @@ $ main.py -n 𝑛𝑢𝑚𝑏𝑒𝑟_𝑜𝑓_𝑛𝑜𝑑𝑒 -d 𝑑𝑎𝑡�
 It's possible to set a precise number of nodes for the hidden layer of NN model, that is going to be explained, using the parameter ```-n```: for the experiment, NNs with only one hidden layer with i ∈ {10, 15, 20} neurons have been considered. Nothing forbids to set a different value: if not already present in the ***models*** path, the model is trained and saved in "models/***dataset_name***_***number_of_node***" folder, and then it becomes available for reproducing the experiment for a second time.
 
 With the parameter ```-d``` a dataset, whose samples will be explained, is choosen.
-This is the list of considered datasets, from Penn & UCI repositories:
+This is the list of considered datasets, from PennML & UCI repositories:
 * [australian](https://archive.ics.uci.edu/ml/datasets/statlog+(australian+credit+approval))
 * [auto](http://dbdmg.polito.it/~paolo/CorsoRM/Lab/DatasetsSorgenti/Regression/Automobile/UCI%20Machine%20Learning%20Repository%20%20Automobile%20Data%20Set.htm)
 * [backache](https://github.com/EpistasisLab/pmlb/blob/master/datasets/backache/metadata.yaml)
