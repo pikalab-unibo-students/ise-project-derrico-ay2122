@@ -18,30 +18,23 @@ The following packages are necessary to run the code:
 * [tensorflow_docs](https://github.com/tensorflow/docs)
 
 ## Usage
-The script has a number of parameters, which can be set from the command line. To see the list of options, run (the executable script is located in src):
+The script has a number of parameters, which can be set from the command line. To see the list of options, run:
 ```
 $ main.py -h
 ```
 
 ### Data reading and preprocessing
 
-The script uses datasets in the CSV format: they are in the ***dataset_files*** path.
+The script uses datasets in the CSV format: they are in ***dataset_files*** path.
 After the reading, the datas are preprocessed; these are the steps:
 
-1. The names of the columns of the datasets contain indications on the type of features and they are used for the One Hot Encoding of the categorical features.
-2. The ***target*** column with the indication of the class is LabelEncoded with value between 0 and n_classes-1.
+1. The names of the columns of the datasets contain indications on the type of feature: categorical and boolean variables contain, in their name, indication on the associated bounds, according to the possible assumable values. Categorical features are LabelEncoded, in order to normalize values in a precise range, between 0 and n_max_value-1, and avoid negative values.
+2. The ***target*** column with the indication of the assigned class is also LabelEncoded, with value between 0 and n_classes-1.
 
 Every dataset is associated to a file which contains the indices of the categorical and boolean columns, indices that are used during the NN encoding phase.
 These files are in ***datasets_categorical_index*** folder.
 
 MNIST Dataset is further elaborated: after the classes labelling, every pixel of the images is forced to be only white or black, because only 0 and 1 values are allowed; every intermediate values are properly rounded.
-
-### Training a NN
-Before extracting explanations, a Neural Net model must be trained:
-```
-$ main.py -n 𝑛𝑢𝑚𝑏𝑒𝑟_𝑜𝑓_𝑛𝑜𝑑𝑒 [...]
-```
-Here, a Neural Net with one hidden layer with ***number_of_node*** nodes is trained, if not already present in the ***models*** path. So, the first time, the created model is trained and saved in "models/***dataset_name***_***number_of_node***" folder, and then it becomes available for reproducing the experiment for a second time.
 
 ### Computing a formal explanation
 A rigorous abduction-based explanation for the samples of a dataset can be computed by running the following command:
@@ -49,30 +42,31 @@ A rigorous abduction-based explanation for the samples of a dataset can be compu
 $ main.py -n 𝑛𝑢𝑚𝑏𝑒𝑟_𝑜𝑓_𝑛𝑜𝑑𝑒 -d 𝑑𝑎𝑡𝑎𝑠𝑒𝑡_𝑛𝑎𝑚𝑒 -e 𝑡𝑦𝑝𝑒_𝑜𝑓_𝑒𝑥𝑝𝑙𝑎𝑛𝑎𝑡𝑖𝑜𝑛 -s 𝑡𝑦𝑝𝑒_𝑜𝑓_𝑠𝑜𝑙𝑣𝑒𝑟_𝑢𝑠𝑒𝑑
 ```
 
-It's possible to set a precise number of nodes for the hidden layer using the parameter ```-n```, as said above: for the experiment they have been considered NN with i ∈ {10, 15, 20} neurons.
+It's possible to set a precise number of nodes for the hidden layer of NN model, that is going to be explained, using the parameter ```-n```: for the experiment, NNs with only one hidden layer with i ∈ {10, 15, 20} neurons have been considered. Nothing forbids to set a different value: if not already present in the ***models*** path, the model is trained and saved in "models/***dataset_name***_***number_of_node***" folder, and then it becomes available for reproducing the experiment for a second time.
 
-With the parameter ```-d``` a dataset, whose samples will be explained, can be choosen.
-This is the list of considered datasets, from Penn & UCI repositories of benchmark dataset:
-* australian
-* auto
-* backache
-* breast_cancer
-* cleve
-* cleveland
-* glass
-* glass2
-* heart_statlog
-* spect
-* voting
-* MNIST dataset
+With the parameter ```-d``` a dataset, whose samples will be explained, is choosen.
+This is the list of considered datasets, from PennML & UCI repositories:
+* [australian](https://archive.ics.uci.edu/ml/datasets/statlog+(australian+credit+approval))
+* [auto](http://dbdmg.polito.it/~paolo/CorsoRM/Lab/DatasetsSorgenti/Regression/Automobile/UCI%20Machine%20Learning%20Repository%20%20Automobile%20Data%20Set.htm)
+* [backache](https://github.com/EpistasisLab/pmlb/blob/master/datasets/backache/metadata.yaml)
+* [breast_cancer](https://archive.ics.uci.edu/ml/datasets/breast+cancer)
+* [cleve](https://github.com/EpistasisLab/pmlb/blob/master/datasets/cleve/metadata.yaml)
+* [cleveland](https://github.com/EpistasisLab/pmlb/blob/master/datasets/cleveland/metadata.yaml)
+* [glass](https://archive.ics.uci.edu/ml/datasets/glass+identification)
+* [glass2](https://github.com/EpistasisLab/pmlb/blob/master/datasets/glass2/metadata.yaml)
+* [heart_statlog](https://archive.ics.uci.edu/ml/datasets/statlog+(heart))
+* [spect](https://archive.ics.uci.edu/ml/datasets/spect+heart)
+* [hepatitis](https://archive.ics.uci.edu/ml/datasets/hepatitis)
+* [voting](https://archive.ics.uci.edu/ml/datasets/congressional+voting+records)
+* [MNIST dataset](https://it.wikipedia.org/wiki/MNIST_database)
 
-```-e``` parameter let decide what kind of explanation realize, between subset- and cardinality-minimal explanations, following Algorithm 1 and Algorithm 2 respectively
+```-e``` parameter lets decide what kind of explanation to realize, if subset- or cardinality-minimal explanations, following Algorithm 1 and Algorithm 2 respectively
 
-```-s``` parameter is releated to the two possible solvers which can be used as oracles for the experiment: Cplex and SMT solvers.
+```-s``` parameter is releated to the two possible solvers which can be used as oracles for the experiment: Cplex and SMT.
 
 ### Reproducing the results
 Working with MNIST Dataset means to have the possibility of visualizing the computed explanations. 
-The following code draws the image rapresented by a sample from MNIST dataset with the explanation of the prediction made by the classifier: the original image is drawn with the white number on the black background, with the red pixels which show how the model sees the image, in order to make its prediction.
+The following code draws the image rapresented by a sample coming from MNIST dataset and the same sample with the explanation of the prediction made by the classifier: the original image is drawn with the white number on the black background, while the red and magenta pixels show how the model interprets the image, in order to make its prediction.
 ```python
 def save_images(sample, expl, pattern_id):
 
@@ -116,8 +110,8 @@ def save_images(sample, expl, pattern_id):
 ```
 
 ## Citations
+This work is born as a reproduction of the above quoted study, but this is not the only used materials.
 
-This work is born as a reproduction of the above quoted study, but this is not the only material used.
 Here some "hot stuff":
 
 ```
