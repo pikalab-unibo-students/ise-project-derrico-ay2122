@@ -62,7 +62,7 @@ This is the list of considered datasets, from PennML & UCI repositories:
 
 ```-e``` parameter lets decide what kind of explanation to realize, if subset- or cardinality-minimal explanations, following Algorithm 1 and Algorithm 2 respectively
 
-```-s``` parameter is releated to the two possible solvers which can be used as oracles for the experiment: Cplex and SMT solvers.
+```-s``` parameter is releated to the two possible solvers which can be used as oracles for the experiment: Cplex and SMT.
 
 ### Reproducing the results
 Working with MNIST Dataset means to have the possibility of visualizing the computed explanations. 
