@@ -18,7 +18,7 @@ The following packages are necessary to run the code:
 * [tensorflow_docs](https://github.com/tensorflow/docs)
 
 ## Usage
-The script has a number of parameters, which can be set from the command line. To see the list of options, run (the executable script is located in src):
+The script has a number of parameters, which can be set from the command line. To see the list of options, run:
 ```
 $ main.py -h
 ```
