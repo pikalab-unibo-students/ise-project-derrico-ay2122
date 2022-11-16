@@ -46,7 +46,7 @@ It's possible to set a precise number of nodes for the hidden layer of NN model,
 
 With the parameter ```-d``` a dataset, whose samples will be explained, is choosen.
 This is the list of considered datasets, from Penn & UCI repositories of benchmark dataset:
-* [australian](https://archive.ics.uci.edu/ml/datasets/statlog+(australian+credit+approval)): 
+* [australian](https://archive.ics.uci.edu/ml/datasets/statlog+(australian+credit+approval))
 * [auto](http://dbdmg.polito.it/~paolo/CorsoRM/Lab/DatasetsSorgenti/Regression/Automobile/UCI%20Machine%20Learning%20Repository%20%20Automobile%20Data%20Set.htm)
 * [backache](https://github.com/EpistasisLab/pmlb/blob/master/datasets/backache/metadata.yaml)
 * [breast_cancer](https://archive.ics.uci.edu/ml/datasets/breast+cancer)
